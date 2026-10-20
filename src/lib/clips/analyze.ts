@@ -2,7 +2,7 @@
  *  v0 signal: loudness, energy and how much it varies (laughs, raised voices, punchlines).
  *  Next: transcript + AI scoring on the server. */
 
-export type Moment = { id: string; start: number; end: number; score: number };
+export type Moment = { id: string; start: number; end: number; score: number; reasons: string[] };
 export type Analysis = { duration: number; hop: number; env: Float32Array; moments: Moment[] };
 
 const SR = 8000; // decode low: enough for loudness, light on memory (1 h ≈ 115 MB mono)
@@ -49,7 +49,7 @@ export function pickMoments(env: Float32Array, duration: number, count: number, 
 
   const win = Math.min(n, Math.round(length / HOP));
   const step = Math.max(1, Math.round(1 / HOP));
-  const cands: { i: number; score: number }[] = [];
+  const cands: { i: number; score: number; mean: number; spread: number; silent: number }[] = [];
   for (let i = 0; i + win <= n; i += step) {
     let m = 0, m2 = 0, silent = 0;
     for (let k = i; k < i + win; k++) {
@@ -59,11 +59,11 @@ export function pickMoments(env: Float32Array, duration: number, count: number, 
     }
     m /= win;
     const spread = Math.sqrt(Math.max(0, m2 / win - m * m));
-    cands.push({ i, score: m + 0.6 * spread - 2 * (silent / win) });
+    cands.push({ i, score: m + 0.6 * spread - 2 * (silent / win), mean: m, spread, silent: silent / win });
   }
   cands.sort((a, b) => b.score - a.score);
 
-  const chosen: { i: number; score: number }[] = [];
+  const chosen: typeof cands = [];
   for (const c of cands) {
     if (chosen.length >= count) break;
     if (chosen.every((o) => Math.abs(o.i - c.i) >= win)) chosen.push(c);
@@ -80,9 +80,32 @@ export function pickMoments(env: Float32Array, duration: number, count: number, 
         start: Math.max(0, s * HOP),
         end: Math.min(duration, e * HOP),
         score: top === low ? 1 : (c.score - low) / (top - low),
+        reasons: reasonsFor(c),
       };
     })
     .sort((a, b) => a.start - b.start);
+}
+
+/** Plain-French reasons, from what the audio actually shows. */
+function reasonsFor(c: { mean: number; spread: number; silent: number }): string[] {
+  const r: string[] = [];
+  if (c.mean > 0.5) r.push("Énergie haute");
+  if (c.spread > 1.1) r.push("Réactions");
+  if (c.silent < 0.05) r.push("Ça parle tout le long");
+  if (!r.length) r.push("Moment le plus vivant du passage");
+  return r;
+}
+
+/** Move a clip earlier (-1) or later (+1) by about a third of its length, cut at the nearest pauses. */
+export function shiftMoment(env: Float32Array, m: Moment, dir: -1 | 1, duration: number): Moment {
+  const len = m.end - m.start;
+  const off = dir * Math.max(4, len / 3);
+  const near = Math.round(1.5 / HOP);
+  let s = snapQuiet(env, Math.round((m.start + off) / HOP), -near, near) * HOP;
+  let e = snapQuiet(env, Math.round((m.end + off) / HOP), -near, near) * HOP;
+  if (s < 0) { e -= s; s = 0; }
+  if (e > duration) { s -= e - duration; e = duration; }
+  return { ...m, start: Math.max(0, s), end: Math.min(duration, Math.max(s + 5, e)) };
 }
 
 function snapQuiet(env: Float32Array, at: number, back: number, fwd: number): number {

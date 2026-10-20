@@ -1,24 +1,26 @@
 import Link from "next/link";
+import { FeelsIllegal } from "@/components/brand/feels-illegal";
 import { Logo } from "@/components/brand/logo";
-import { formats } from "@/lib/formats";
+import { ToolName } from "@/components/brand/tool-name";
 import { sections } from "@/lib/showcase";
 
 const cols = [
-  { title: "Produit", links: [["Formats", "/#formats"], ["Créer", "/creer"], ["Publier", "/publier"], ["Messages", "/messages"], ["Tarifs", "/tarifs"]] },
-  { title: "Formats", links: formats.slice(0, 5).map((f) => [f.title, `/creer?format=${f.slug}`]) },
-  { title: "Catégories", links: sections.map((s) => [s.title, `/#${s.id}`]) },
+  { title: "Outils", links: [["Propagande", "/propagande"], ["Agent double", "/agent-double"], ["Tarifs", "/tarifs"]] },
+  { title: "Exemples", links: sections.map((s) => [s.title, `/#${s.id}`]) },
 ];
 
-/** Mega footer: a big line, then link columns that all go to real pages. */
+/** Footer: the line, the stamp, and link columns that only point to real pages. */
 export function Footer() {
   return (
     <footer className="mt-24 border-t border-glass-rim">
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 pt-14 pb-10 md:grid-cols-[1.4fr_repeat(3,1fr)] md:px-6 md:pb-14">
-        <div className="flex flex-col gap-5">
+      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 pt-14 pb-10 md:grid-cols-[1.6fr_repeat(2,1fr)] md:px-6">
+        <div className="flex flex-col items-start gap-5">
           <Logo />
-          <p className="font-display text-[34px] leading-[0.95] font-extrabold tracking-[-0.02em] uppercase md:text-[44px]">
-            Des vidéos qui marchent, <span className="bg-gradient-to-r from-corail via-rose to-violet bg-clip-text text-transparent">en français.</span>
+          <p className="flex flex-col gap-1 text-[40px] leading-[0.95] md:text-[52px]">
+            <ToolName tool="propagande" className="text-corail" />
+            <ToolName tool="agent-double" className="text-lilas" />
           </p>
+          <FeelsIllegal />
         </div>
         {cols.map((c) => (
           <nav key={c.title} aria-label={c.title} className="flex flex-col gap-2.5">

@@ -34,7 +34,7 @@ export function TopNav({ compact = false }: { compact?: boolean }) {
           <span className="size-2 rounded-full bg-corail" aria-hidden />
           0 crédit
         </span>
-        <ButtonLink href="/creer" className="h-9 px-4 text-sm">
+        <ButtonLink href="/propagande" className="h-9 px-4 text-sm">
           Commencer
         </ButtonLink>
       </div>

@@ -9,7 +9,7 @@ export default function Page() {
       <span className="font-mono text-[13px] tracking-[0.08em] text-ink-muted uppercase">Bientôt</span>
       <h1 className="font-display text-[44px] leading-[1] font-extrabold tracking-[-0.02em] md:text-[56px]">Tarifs</h1>
       <p className="glass light-edge max-w-[52ch] rounded-[24px] p-6 text-[18px] leading-[1.5] text-ink-muted">Commence gratuitement. Les forfaits arrivent bientôt.</p>
-      <ButtonLink href="/creer">Créer une vidéo</ButtonLink>
+      <ButtonLink href="/propagande">Essayer Propagande</ButtonLink>
     </div>
   );
 }

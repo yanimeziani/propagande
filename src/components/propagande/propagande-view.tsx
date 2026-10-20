@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DownloadSimple, FilmSlate, Minus, Plus, Scissors, UploadSimple } from "@phosphor-icons/react";
-import { ModeSwitch } from "@/components/studio/mode-switch";
+import { ToolHeader } from "@/components/site/tool-header";
 import { Button } from "@/components/ui/button";
 import { analyzeFile, fmtTime, type Moment } from "@/lib/clips/analyze";
 import { exportClip } from "@/lib/clips/export";
@@ -59,10 +59,7 @@ export function PropagandeView() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 pb-32 md:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <ModeSwitch active="propagande" />
-        <p className="text-[14px] text-ink-muted">Tout reste sur ton appareil. Rien n&apos;est envoyé.</p>
-      </div>
+      <ToolHeader tool="propagande" line="Une vidéo longue devient des clips verticaux qui tournent partout." note="Tout reste sur ton appareil. Rien n'est envoyé." />
 
       {!file && <DropZone onPick={onPick} />}
 

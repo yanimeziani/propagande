@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@huggingface/transformers": "4.3.1",
     "@phosphor-icons/react": "^2.1.7",
     "next": "^16.4.2",
     "react": "^19.3.1",

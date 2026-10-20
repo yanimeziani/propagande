@@ -1,35 +1,19 @@
-/** Finds strong moments in a long video from its audio, entirely in the browser.
- *  v0 signal: loudness, energy and how much it varies (laughs, raised voices, punchlines).
- *  Next: transcript + AI scoring on the server. */
+/** Finds strong moments from the audio alone: loudness, energy and how much it varies (laughs, raised
+ *  voices, punchlines). The fallback when there's no speech to transcribe; moments.ts does the real work. */
 
 export type Moment = { id: string; start: number; end: number; score: number; reasons: string[] };
-export type Analysis = { duration: number; hop: number; env: Float32Array; moments: Moment[] };
 
-const SR = 8000; // decode low: enough for loudness, light on memory (1 h ≈ 115 MB mono)
-const HOP = 0.25; // seconds per envelope frame
+export const HOP = 0.25; // seconds per envelope frame
 
-export async function analyzeFile(file: File, opts: { count?: number; length?: number } = {}): Promise<Analysis> {
-  const count = opts.count ?? 8;
-  const length = opts.length ?? 30;
-  const buf = await file.arrayBuffer();
-  const ctx = new OfflineAudioContext(1, 1, SR);
-  const audio = await ctx.decodeAudioData(buf);
-  const env = envelope(audio);
-  const duration = audio.duration;
-  return { duration, hop: HOP, env, moments: pickMoments(env, duration, count, length) };
-}
-
-function envelope(audio: AudioBuffer): Float32Array {
-  const H = Math.max(1, Math.floor(audio.sampleRate * HOP));
+/** Loudness per 0.25 s frame of mono audio. */
+export function envelopeOf(audio: Float32Array, sampleRate: number): Float32Array {
+  const H = Math.max(1, Math.floor(sampleRate * HOP));
   const frames = Math.floor(audio.length / H);
-  const chans = Array.from({ length: audio.numberOfChannels }, (_, i) => audio.getChannelData(i));
   const env = new Float32Array(frames);
   for (let f = 0; f < frames; f++) {
     let s = 0;
-    for (const ch of chans) {
-      for (let k = f * H; k < (f + 1) * H; k++) s += ch[k] * ch[k];
-    }
-    env[f] = Math.sqrt(s / (H * chans.length));
+    for (let k = f * H; k < (f + 1) * H; k++) s += audio[k] * audio[k];
+    env[f] = Math.sqrt(s / H);
   }
   return env;
 }
@@ -91,7 +75,7 @@ function reasonsFor(c: { mean: number; spread: number; silent: number }): string
   const r: string[] = [];
   if (c.mean > 0.5) r.push("Énergie haute");
   if (c.spread > 1.1) r.push("Réactions");
-  if (c.silent < 0.05) r.push("Ça parle tout le long");
+  if (c.silent < 0.05) r.push("Aucun blanc");
   if (!r.length) r.push("Moment le plus vivant du passage");
   return r;
 }

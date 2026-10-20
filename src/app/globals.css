@@ -161,3 +161,18 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .iri-text, .iri-fill { animation: none !important; }
 }
+
+/* Propagande preview: burned-in caption look, and the flash on a cold-open cut */
+.caption-text {
+  font-family: var(--font-geist), system-ui, sans-serif;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 0.2em rgba(15, 15, 15, 0.92);
+  text-transform: uppercase;
+}
+.cut-flash {
+  animation: cut-flash 180ms ease-out forwards;
+}
+@keyframes cut-flash {
+  from { opacity: 0.55; }
+  to { opacity: 0; }
+}

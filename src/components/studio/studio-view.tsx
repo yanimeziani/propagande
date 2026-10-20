@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Camera, Check, Microphone, VideoCamera } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { formats } from "@/lib/formats";
+import { ModeSwitch } from "@/components/studio/mode-switch";
 
 const times = ["Maintenant", "Ce soir 18 h", "Demain 12 h"];
 
@@ -23,6 +24,7 @@ export function StudioView({ initialSlug, idea }: { initialSlug: string; idea?: 
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 pb-40 md:flex-row md:overflow-hidden md:p-4 md:pb-4">
       {/* Control panel */}
       <aside className="glass flex w-full shrink-0 flex-col gap-6 rounded-[24px] p-5 md:w-[340px] md:overflow-y-auto">
+        <ModeSwitch active="format" />
         {idea && (
           <div className="flex flex-col gap-1 rounded-[14px] border border-glass-rim p-3">
             <span className="text-[13px] font-semibold text-ink-muted">Ton idée</span>

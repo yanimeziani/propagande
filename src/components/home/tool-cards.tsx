@@ -5,7 +5,7 @@ import { tools } from "@/lib/showcase";
 /** The four sections as big media cards, like a tool row. */
 export function ToolCards() {
   return (
-    <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-4 md:px-0">
+    <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-5 md:px-0">
       {tools.map((t) => (
         <Link key={t.title} href={t.href} className="group relative w-[72vw] shrink-0 snap-start overflow-hidden rounded-[24px] border border-glass-rim bg-surface-200 sm:w-[300px] md:w-auto">
           <div className="relative aspect-[4/3] overflow-hidden">

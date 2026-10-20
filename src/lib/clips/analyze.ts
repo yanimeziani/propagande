@@ -1,0 +1,101 @@
+/** Finds strong moments in a long video from its audio, entirely in the browser.
+ *  v0 signal: loudness, energy and how much it varies (laughs, raised voices, punchlines).
+ *  Next: transcript + AI scoring on the server. */
+
+export type Moment = { id: string; start: number; end: number; score: number };
+export type Analysis = { duration: number; hop: number; env: Float32Array; moments: Moment[] };
+
+const SR = 8000; // decode low: enough for loudness, light on memory (1 h ≈ 115 MB mono)
+const HOP = 0.25; // seconds per envelope frame
+
+export async function analyzeFile(file: File, opts: { count?: number; length?: number } = {}): Promise<Analysis> {
+  const count = opts.count ?? 8;
+  const length = opts.length ?? 30;
+  const buf = await file.arrayBuffer();
+  const ctx = new OfflineAudioContext(1, 1, SR);
+  const audio = await ctx.decodeAudioData(buf);
+  const env = envelope(audio);
+  const duration = audio.duration;
+  return { duration, hop: HOP, env, moments: pickMoments(env, duration, count, length) };
+}
+
+function envelope(audio: AudioBuffer): Float32Array {
+  const H = Math.max(1, Math.floor(audio.sampleRate * HOP));
+  const frames = Math.floor(audio.length / H);
+  const chans = Array.from({ length: audio.numberOfChannels }, (_, i) => audio.getChannelData(i));
+  const env = new Float32Array(frames);
+  for (let f = 0; f < frames; f++) {
+    let s = 0;
+    for (const ch of chans) {
+      for (let k = f * H; k < (f + 1) * H; k++) s += ch[k] * ch[k];
+    }
+    env[f] = Math.sqrt(s / (H * chans.length));
+  }
+  return env;
+}
+
+/** Slide a window over the z-scored loudness; score = mean + 0.6·spread − silence; keep the best non-overlapping ones. */
+export function pickMoments(env: Float32Array, duration: number, count: number, length: number): Moment[] {
+  const n = env.length;
+  if (n < 8) return [];
+  let mean = 0;
+  for (const v of env) mean += v;
+  mean /= n;
+  let sd = 0;
+  for (const v of env) sd += (v - mean) ** 2;
+  sd = Math.sqrt(sd / n) || 1;
+  const z = Float32Array.from(env, (v) => (v - mean) / sd);
+  const quiet = mean * 0.25;
+
+  const win = Math.min(n, Math.round(length / HOP));
+  const step = Math.max(1, Math.round(1 / HOP));
+  const cands: { i: number; score: number }[] = [];
+  for (let i = 0; i + win <= n; i += step) {
+    let m = 0, m2 = 0, silent = 0;
+    for (let k = i; k < i + win; k++) {
+      m += z[k];
+      m2 += z[k] * z[k];
+      if (env[k] < quiet) silent++;
+    }
+    m /= win;
+    const spread = Math.sqrt(Math.max(0, m2 / win - m * m));
+    cands.push({ i, score: m + 0.6 * spread - 2 * (silent / win) });
+  }
+  cands.sort((a, b) => b.score - a.score);
+
+  const chosen: { i: number; score: number }[] = [];
+  for (const c of cands) {
+    if (chosen.length >= count) break;
+    if (chosen.every((o) => Math.abs(o.i - c.i) >= win)) chosen.push(c);
+  }
+  const top = chosen[0]?.score ?? 1;
+  const low = chosen[chosen.length - 1]?.score ?? 0;
+  return chosen
+    .map((c, idx) => {
+      // snap the cut points to the quietest frame nearby so a clip doesn't start mid-word
+      const s = snapQuiet(env, c.i, -Math.round(3 / HOP), Math.round(1 / HOP));
+      const e = snapQuiet(env, c.i + win, -Math.round(1 / HOP), Math.round(3 / HOP));
+      return {
+        id: `m${idx}`,
+        start: Math.max(0, s * HOP),
+        end: Math.min(duration, e * HOP),
+        score: top === low ? 1 : (c.score - low) / (top - low),
+      };
+    })
+    .sort((a, b) => a.start - b.start);
+}
+
+function snapQuiet(env: Float32Array, at: number, back: number, fwd: number): number {
+  let best = Math.min(env.length - 1, Math.max(0, at));
+  for (let k = Math.max(0, at + back); k <= Math.min(env.length - 1, at + fwd); k++) {
+    if (env[k] < env[best]) best = k;
+  }
+  return best;
+}
+
+export function fmtTime(t: number): string {
+  const m = Math.floor(t / 60);
+  const s = Math.floor(t % 60);
+  const h = Math.floor(m / 60);
+  return h ? `${h}:${String(m % 60).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
+}

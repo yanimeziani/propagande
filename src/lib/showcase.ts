@@ -5,6 +5,7 @@ export type ShowSection = { id: string; title: string; sub: string; href: string
 export const tools = [
   { href: "/#formats", title: "Formats", body: "Des vidéos qui marchent déjà, expliquées plan par plan.", clip: "fumee", soon: false },
   { href: "/creer", title: "Créer", body: "Filme 3 plans avec ton téléphone. On monte pour toi.", clip: "tenues", soon: false },
+  { href: "/propagande", title: "Propagande", body: "Une vidéo longue devient 10 clips verticaux, prêts à publier.", clip: "rap-foule", soon: false },
   { href: "/publier", title: "Publier", body: "Instagram, TikTok et YouTube, au bon moment.", clip: "notification", soon: true },
   { href: "/messages", title: "Messages", body: "Tes commentaires et tes DM deviennent des clients.", clip: "doigts", soon: true },
 ];

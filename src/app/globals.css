@@ -59,8 +59,10 @@
   --color-lilas: var(--lilas);
   --color-rec: var(--rec);
   --color-ok: var(--ok);
-  --font-display: var(--font-bricolage);
-  --font-sans: var(--font-figtree);
+  --font-display: var(--font-geist);
+  --font-sans: var(--font-geist);
+  --font-propagande: var(--font-stencil-src);
+  --font-agent: var(--font-typewriter-src);
   --font-mono: var(--font-geist-mono);
   --radius-sm: 14px;
   --radius-md: 24px;
@@ -75,7 +77,7 @@ html {
 body {
   background: var(--surface-100);
   color: var(--ink);
-  font-family: var(--font-figtree), system-ui, sans-serif;
+  font-family: var(--font-geist), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

@@ -47,7 +47,7 @@ export default function HomePage() {
             <span className="iri-text">8 clips prêts à publier.</span>
           </h1>
           <p className="max-w-[50ch] text-[18px] leading-[1.5] text-ink-muted">
-            Propagande trouve tes meilleurs moments, coupe au bout de la phrase et sous-titre chaque mot. Tout se passe sur ton appareil : rien n&apos;est envoyé. Clips, ouvertures et sous-titres : gratuits, pour toujours.
+            Propagande trouve tes meilleurs moments, coupe au bout de la phrase et sous-titre chaque mot. Tout se passe sur ton appareil, même sans internet : rien n&apos;est envoyé. Clips, ouvertures et sous-titres : gratuits, pour toujours.
           </p>
           <Composer />
         </div>

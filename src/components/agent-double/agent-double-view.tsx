@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { fmtTime } from "@/lib/clips/analyze";
 import { takeHandoff } from "@/lib/handoff";
 import { coverage, frameAt, trackPerson, type Track, type TrackProgress } from "@/lib/double/track";
+import { engineUrl, jobResult, jobStatus, STATE_TEXT, submitJob, type JobStatus } from "@/lib/double/engine";
+import { addCreation } from "@/lib/library";
 import { HistoryPanel } from "@/components/library/history-panel";
 
 type Target = { x: number; y: number; t: number };
@@ -31,6 +33,10 @@ export function AgentDoubleView() {
   const [who, setWho] = useState<Who>("ia");
   const [ownVideo, setOwnVideo] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [engine] = useState<string | null>(() => (typeof window === "undefined" ? null : engineUrl()));
+  const [code, setCode] = useState(() => { try { return typeof window === "undefined" ? "" : localStorage.getItem("ml-double-code") ?? ""; } catch { return ""; } });
+  const [job, setJob] = useState<{ id: string; status: JobStatus; result?: string; error?: string } | null>(null);
+  const [tooLong, setTooLong] = useState(false);
   const v = useRef<HTMLVideoElement>(null);
   const overlay = useRef<HTMLCanvasElement>(null);
   const [track, setTrack] = useState<Track | null>(null);
@@ -89,7 +95,33 @@ export function AgentDoubleView() {
   useEffect(() => () => { if (video) URL.revokeObjectURL(video.url); }, [video]);
   useEffect(() => () => { if (image) URL.revokeObjectURL(image.url); }, [image]);
 
-  const ready = !!video && !!image && !!track && ownVideo && (who === "ia" || consent);
+  const ready = !!video && !!image && !!track && ownVideo && (who === "ia" || consent) && !tooLong;
+  const busyJob = !!job && !["done", "failed"].includes(job.status.state);
+
+  async function generate() {
+    if (!ready || !engine || !video || !image || !target || !track || !code.trim()) return;
+    try { localStorage.setItem("ml-double-code", code.trim()); } catch { /* storage blocked */ }
+    setJob({ id: "", status: { state: "queued" } });
+    try {
+      const id = await submitJob(engine, code.trim(), video.url, image.url, {
+        draft: true, tap: target, max_seconds: 10, track_coverage: Math.round(coverage(track) * 100) / 100,
+        consent: { own_video: ownVideo, character: who === "ia" ? "ai" : "real", real_person_consent: who === "reelle" ? consent : undefined, at: new Date().toISOString() },
+      });
+      setJob({ id, status: { state: "queued" } });
+      for (;;) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const st = await jobStatus(engine, code.trim(), id);
+        setJob((j) => (j ? { ...j, status: st } : j));
+        if (st.state === "failed") throw new Error(st.error ?? "La génération a échoué.");
+        if (st.state === "done") break;
+      }
+      const blob = await jobResult(engine, code.trim(), id);
+      setJob((j) => (j ? { ...j, result: URL.createObjectURL(blob) } : j));
+      await addCreation({ tool: "agent-double", title: `Brouillon · ${video.name}`, source: video.name, start: 0, end: v.current?.duration ?? 0, ext: "mp4" }, blob).catch(() => {});
+    } catch (e) {
+      setJob((j) => ({ id: j?.id ?? "", status: { state: "failed" }, error: e instanceof Error ? e.message : "La génération a échoué." }));
+    }
+  }
   const missing = [!video && "la scène", !target && "la personne à remplacer", !image && "le nouveau personnage", !ownVideo && "tes droits sur la vidéo", who === "reelle" && !consent && "le consentement"].filter(Boolean) as string[];
 
   function mark(e: React.MouseEvent<HTMLDivElement>) {
@@ -123,7 +155,8 @@ export function AgentDoubleView() {
           ) : (
             <>
               <div className="relative overflow-hidden rounded-[18px] bg-black">
-                <video ref={v} src={video.url} controls playsInline className="block max-h-[60vh] w-full object-contain" />
+                <video ref={v} src={video.url} controls playsInline className="block max-h-[60vh] w-full object-contain"
+                  onLoadedMetadata={(e) => setTooLong(e.currentTarget.duration > 10.5)} />
                 <canvas ref={overlay} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" />
                 <div role="button" tabIndex={0} aria-label="Toucher la personne à remplacer" onClick={mark}
                   onKeyDown={(e) => { if (e.key === "Enter" && v.current) setTarget({ x: 0.5, y: 0.5, t: v.current.currentTime }); }}
@@ -198,7 +231,7 @@ export function AgentDoubleView() {
       <section className="glass light-edge flex flex-col gap-4 rounded-[24px] p-5" aria-labelledby="pipeline">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="pipeline" className="font-display text-[22px] font-extrabold uppercase">Le pipeline</h2>
-          <span className="glass rounded-full px-3 py-1 font-mono text-[12px] text-ink-muted">Moteur GPU en préparation</span>
+          <span className="glass rounded-full px-3 py-1 font-mono text-[12px] text-ink-muted">{engine ? "Moteur GPU en ligne" : "Moteur GPU en préparation"}</span>
         </div>
         <ol className="grid gap-2 md:grid-cols-5">
           {STEPS.map((s, i) => (
@@ -209,12 +242,36 @@ export function AgentDoubleView() {
             </li>
           ))}
         </ol>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button disabled className="disabled:cursor-not-allowed disabled:opacity-60">Générer un brouillon (bientôt)</Button>
+        <div className="flex flex-wrap items-end gap-3">
+          {engine && (
+            <label className="flex flex-col gap-1">
+              <span className="text-[13px] font-semibold text-ink-muted">Code d&apos;accès Pro</span>
+              <input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" spellCheck={false}
+                className="glass h-11 w-48 rounded-full px-4 font-mono text-[14px] outline-none focus:ring-2 focus:ring-[var(--focus)]" />
+            </label>
+          )}
+          <Button onClick={generate} disabled={!engine || !ready || !code.trim() || busyJob} className="disabled:cursor-not-allowed disabled:opacity-60">
+            {busyJob ? "Génération…" : engine ? "Générer un brouillon (480p)" : "Générer un brouillon (bientôt)"}
+          </Button>
           <p className="text-[14px] text-ink-muted">
-            {ready ? "Tout est prêt. Le brouillon 480p sera généré dès que le moteur est en ligne, puis la version finale après ton OK." : `Il manque : ${missing.join(", ")}.`}
+            {tooLong ? "Pour l'instant, la scène doit faire 10 secondes ou moins."
+              : !ready ? `Il manque : ${missing.join(", ")}.`
+              : !engine ? "Tout est prêt. Le brouillon sera généré dès que le moteur est en ligne, puis la version finale après ton OK."
+              : "Une personne à l'écran pour l'instant. Le brouillon prend quelques minutes."}
           </p>
         </div>
+        {job && (
+          <div role="status" className="flex flex-col gap-3 rounded-[18px] border border-glass-rim p-4">
+            <p className="text-[15px]">{job.error ? <span className="text-rec">{job.error}</span> : STATE_TEXT[job.status.state]}{job.status.state === "queued" && job.status.position ? ` (position ${job.status.position})` : ""}</p>
+            {job.result && (
+              <>
+                <video src={job.result} controls playsInline className="max-h-[60vh] w-full rounded-[14px] bg-black object-contain" />
+                <a href={job.result} download={`agent-double-${job.id}.mp4`} className="inline-flex h-11 w-fit items-center rounded-full bg-ok px-5 text-[15px] font-semibold text-on-ok">Télécharger le brouillon</a>
+                {job.status.dry_run && <p className="text-[13px] text-ink-muted">Test du serveur : le résultat est ta scène d&apos;origine, sans remplacement.</p>}
+              </>
+            )}
+          </div>
+        )}
       </section>
 
       <HistoryPanel tool="agent-double" />

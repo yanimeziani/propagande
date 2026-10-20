@@ -12,7 +12,7 @@ Decided by the Roast Room council on 2026-10-20: **GO on B** (B 8.3, support 8.1
 | 2 | ~~**Approve the free-forever line.**~~ **Approved 2026-10-20**, as written. | `src/lib/offer.ts` → `FREE_FOREVER` |
 | 3 | **Runway:** 3 months of living costs covered? If not, the first paid ask moves from Nov 10 to Nov 8. | This file |
 | 4 | **Make the code public** (GitHub, AGPL): **yes, before Oct 25** (2026-10-20). Repo to create. | GitHub |
-| 5 | **The inbox.** bonjour@madelucid.com is on the site (help, Pro waitlist, privacy). It has to receive mail. | Mail setup |
+| 5 | ~~**The inbox.**~~ **Done 2026-10-20:** bonjour@madelucid.com forwards to Yani's Gmail through Spaceship's free email forwarding (MX mx1/mx2.efwd.spaceship.net, SPF set). Replies go out from Gmail. | Mail setup |
 | 6 | **Where it's hosted: Yani's server** (2026-10-20), replacing the old agency site after a backup. Each deploy still needs his OK. | Deploy |
 | 7 | **The 2 communities** for the tester call. Only ones whose rules allow posting a tool. Read the rules first. | Section 4 |
 | 8 | **Showcase videos.** The home page wall is Higgsfield concept work labelled « Format 9:16 ». Replace it with real Propagande exports from your own videos when you're OK showing them. | `src/lib/showcase.ts` |

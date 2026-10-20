@@ -46,7 +46,7 @@ def extract(video, work):
 
 
 def transcribe(wav, work, lang):
-    out = os.path.join(work, "words")
+    out = os.path.join(work, "words" if lang == "fr" else "words-" + lang)  # one cache per language setting
     if not os.path.exists(out + ".json"):
         log("2. words   whisper.cpp large-v3-turbo (%s)…" % lang)
         run([WHISPER, "-m", MODEL, "-f", wav, "-l", lang, "-ml", "1", "-sow", "-oj", "-of", out, "-t", str(os.cpu_count() or 8), "-np"])

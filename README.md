@@ -25,6 +25,10 @@ Open http://localhost:3000/propagande and drop a video. The first run downloads 
 | `docs/PROPAGANDE.md` | Product plan and build order |
 | `docs/LAUNCH.md` | Launch plan, scorecard, fallbacks |
 
+## Propagande in Claude (local, 0 $ per clip)
+
+An MCP server and a skill let Claude use the local engine: Claude chooses the moments and openings, your Mac transcribes and renders. Setup: `engine/mcp/README.md`.
+
 ## Report a problem
 
 Open an issue with your browser, device and what you saw, or write to bonjour@madelucid.com.

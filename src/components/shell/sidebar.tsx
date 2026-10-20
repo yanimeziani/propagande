@@ -2,14 +2,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
-import { BookOpen, Detective, FilmStrip, FolderSimple, MegaphoneSimple, Plus, SidebarSimple, Sparkle } from "@phosphor-icons/react";
+import { BookOpen, Detective, FilmStrip, FolderSimple, MegaphoneSimple, Plus, ShieldCheck, SidebarSimple, Sparkle } from "@phosphor-icons/react";
 import { Logo } from "@/components/brand/logo";
 
 type Item = { href?: string; label: string; Icon: typeof Plus; badge?: "Nouveau" | "Bêta" | "Bientôt"; match?: (p: string) => boolean };
 const groups: { title: string; items: Item[] }[] = [
   { title: "Outils", items: [
     { href: "/propagande", label: "Propagande", Icon: MegaphoneSimple, badge: "Nouveau", match: (p) => p.startsWith("/propagande") },
-    { href: "/agent-double", label: "Agent double", Icon: Detective, badge: "Bêta", match: (p) => p.startsWith("/agent-double") },
+    { href: "/agent-double", label: "Agent double", Icon: Detective, badge: "Bientôt", match: (p) => p.startsWith("/agent-double") },
   ] },
   { title: "Mes créations", items: [
     { href: "/creations", label: "Clips", Icon: FilmStrip, match: (p) => p.startsWith("/creations") },
@@ -81,16 +81,12 @@ export function Sidebar() {
       </nav>
 
       {!rail ? (
-        <div className="glass flex flex-col gap-2 rounded-[18px] p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold">Crédits</span>
-            <span className="font-mono text-[13px] tabular">0</span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full w-0 iri-fill" /></div>
-          <Link href="/tarifs" className="text-[13px] font-semibold text-lilas hover:underline">Voir les forfaits</Link>
-        </div>
+        <Link href="/confidentialite" className="glass flex flex-col gap-1 rounded-[18px] p-3 hover:bg-white/5">
+          <span className="flex items-center gap-2 text-[13px] font-semibold"><ShieldCheck size={18} aria-hidden /> Sur ton appareil</span>
+          <span className="text-[13px] leading-snug text-ink-muted">Tes vidéos ne quittent jamais ton ordi. Rien n&apos;est envoyé.</span>
+        </Link>
       ) : (
-        <Link href="/tarifs" title="Crédits : 0" className="flex size-10 items-center justify-center self-center rounded-full font-mono text-[12px] text-ink-muted glass">0</Link>
+        <Link href="/confidentialite" title="Sur ton appareil : rien n'est envoyé" className="flex size-10 items-center justify-center self-center rounded-full text-ink-muted glass"><ShieldCheck size={18} aria-hidden /></Link>
       )}
     </aside>
   );

@@ -13,18 +13,22 @@ const tools = [
     id: "propagande",
     name: "Propagande",
     pitch: "Une vidéo longue devient des clips verticaux qui tournent partout.",
-    steps: ["Dépose ton live, ton podcast ou ton vlog.", "On trouve les moments qui accrochent, coupés au bout de la phrase.", "Sous-titres, cadrage 9:16 sur ton visage, prêt à publier."],
-    clips: [{ slug: "rap-foule", label: "Moment fort" }, { slug: "ton-chalet", label: "Crochet" }, { slug: "type", label: "Sous-titres" }],
+    steps: [
+      "Dépose ton live, ton podcast ou ton vlog.",
+      "On choisit les moments qui accrochent, coupés au bout de la phrase, et on t'offre d'ouvrir sur la meilleure.",
+      "Sous-titres mot à mot, format 9:16 que tu recadres du doigt. Prêt à publier.",
+    ],
+    clips: [{ slug: "rap-foule", label: "Format 9:16" }, { slug: "ton-chalet", label: "Format 9:16" }, { slug: "type", label: "Format 9:16" }],
     cta: "Essayer Propagande",
     tone: "corail",
   },
   {
     id: "agent-double",
     name: "Agent double",
-    pitch: "Ta scène, un autre personnage. Même mouvements, même lumière, même son.",
-    steps: ["Dépose ta vidéo et touche la personne à remplacer.", "Choisis le nouveau personnage : inventé, ou une vraie personne qui a dit oui.", "Brouillon d'abord, version finale après ton OK."],
+    pitch: "Bientôt : ta scène, un autre personnage. Même mouvements, même lumière, même son.",
+    steps: ["Tu déposeras ta vidéo et toucheras la personne à remplacer.", "Tu choisiras le nouveau personnage : inventé, ou une vraie personne qui a dit oui.", "Brouillon d'abord, version finale après ton OK."],
     clips: [{ slug: "fumee", label: "Personnage IA" }, { slug: "eclaboussure", label: "Personnage IA" }, { slug: "fenetre-auto", label: "Personnage IA" }],
-    cta: "Voir Agent double",
+    cta: "Voir ce qui s'en vient",
     tone: "violet",
   },
 ] as const;
@@ -39,11 +43,11 @@ export default function HomePage() {
         <div className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-6 text-center">
           <FeelsIllegal />
           <h1 className="font-display text-[46px] leading-[0.98] font-extrabold tracking-[-0.025em] text-balance md:text-[80px]">
-            Deux outils qui font{" "}
-            <span className="iri-text">tourner tes vidéos.</span>
+            Ta vidéo longue,{" "}
+            <span className="iri-text">8 clips prêts à publier.</span>
           </h1>
-          <p className="max-w-[48ch] text-[18px] leading-[1.5] text-ink-muted">
-            Propagande transforme une vidéo longue en clips qui tournent. Agent double change le personnage de ta scène.
+          <p className="max-w-[50ch] text-[18px] leading-[1.5] text-ink-muted">
+            Propagande trouve tes meilleurs moments, coupe au bout de la phrase et sous-titre chaque mot. Tout se passe sur ton appareil : rien n&apos;est envoyé. Clips, ouvertures et sous-titres : gratuits, pour toujours.
           </p>
           <Composer />
         </div>

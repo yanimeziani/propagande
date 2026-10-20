@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MadeLucid · Propagande
 
-## Getting Started
+Drop a long video, get 8 vertical clips with word-by-word captions. Everything runs in the browser: Whisper large-v3-turbo on the user's GPU (WebGPU), cuts on whole sentences, three openings per clip (as is, punch first, question first), export to 9:16 MP4. The video never leaves the device, so a clip costs nothing to serve.
 
-First, run the development server:
+Live: madelucid.com (French first). License: AGPL-3.0 (see `LICENSE`).
+
+## Run it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000/propagande and drop a video. The first run downloads the voice model (about 566 MB, once, after asking).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How it works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| File | Job |
+|---|---|
+| `src/lib/clips/transcribe.worker.ts` | Whisper in a worker (transformers.js, WebGPU or WASM), language detection, word timing |
+| `src/lib/clips/transcribe.ts` | Runtime choice, pause-cut windows, the worker, the transcript cache |
+| `src/lib/clips/model-store.ts` | Model files kept in the origin-private file system (the Cache API drops big files) |
+| `src/lib/clips/moments.ts` | Sentences, moment scoring, the cold open, caption chunks |
+| `src/lib/clips/export.ts` | Canvas + MediaRecorder render: segments, captions, the end card |
+| `docs/PROPAGANDE.md` | Product plan and build order |
+| `docs/LAUNCH.md` | Launch plan, scorecard, fallbacks |
 
-## Learn More
+## Report a problem
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open an issue with your browser, device and what you saw, or write to bonjour@madelucid.com.

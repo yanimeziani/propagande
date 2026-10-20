@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Detective, MegaphoneSimple, UploadSimple } from "@phosphor-icons/react";
+import { UploadSimple } from "@phosphor-icons/react";
 import { setHandoff, type Handoff } from "@/lib/handoff";
 
 const copy = {
@@ -9,10 +9,10 @@ const copy = {
   "agent-double": { title: "Dépose la scène à transformer", sub: "10 secondes ou moins. Tu choisis ensuite le nouveau personnage.", accept: "video/*" },
 } as const;
 
-/** The tool in the hero: pick a tool, drop a file, land in the tool with it loaded. */
+/** The drop box in the hero: drop a file and land in Propagande with it loaded. (Agent double joins when it ships.) */
 export function Composer() {
   const router = useRouter();
-  const [tool, setTool] = useState<Handoff["tool"]>("propagande");
+  const tool: Handoff["tool"] = "propagande";
   const [count, setCount] = useState(8);
   const [length, setLength] = useState(30);
   const [over, setOver] = useState(false);
@@ -26,15 +26,6 @@ export function Composer() {
 
   return (
     <div id="composer" className="light-edge mx-auto bg-surface-200/90 backdrop-blur-2xl flex w-full max-w-3xl scroll-mt-24 flex-col gap-3 rounded-[28px] p-3 text-left shadow-lift">
-      <div className="flex items-center gap-1 rounded-full bg-black/20 p-1 self-start">
-        {([["propagande", "Propagande", MegaphoneSimple], ["agent-double", "Agent double", Detective]] as const).map(([k, label, Icon]) => (
-          <button key={k} type="button" onClick={() => setTool(k)} aria-pressed={tool === k}
-            className={`flex h-9 items-center gap-2 rounded-full px-4 text-[14px] font-semibold transition-colors ${tool === k ? "bg-violet text-on-violet" : "text-ink-muted hover:text-ink"}`}>
-            <Icon size={18} weight={tool === k ? "fill" : "regular"} aria-hidden /> {label}
-          </button>
-        ))}
-      </div>
-
       <label
         onDragOver={(e) => { e.preventDefault(); setOver(true); }}
         onDragLeave={() => setOver(false)}

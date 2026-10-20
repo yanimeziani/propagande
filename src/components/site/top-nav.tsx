@@ -13,13 +13,10 @@ export function TopNav({ compact = false }: { compact?: boolean }) {
     >
       <div className="md:hidden"><Logo compact={compact} /></div>
       <div className="ml-auto flex items-center gap-2">
-        <span className="glass hidden h-9 items-center gap-2 rounded-full px-3 font-mono text-[13px] text-ink-muted tabular sm:inline-flex">
-          <span className="size-2 rounded-full bg-corail" aria-hidden />0 crédit
-        </span>
         <Link href="/tarifs" className="hidden h-9 items-center rounded-full px-3 text-[14px] font-semibold text-ink-muted hover:bg-white/5 hover:text-ink md:inline-flex">Tarifs</Link>
-        <a href="mailto:bonjour@madelucid.com" title="Aide" className="hidden size-9 items-center justify-center rounded-full text-ink-muted hover:bg-white/5 hover:text-ink md:inline-flex">
+        <Link href="/aide" title="Aide" className="hidden size-9 items-center justify-center rounded-full text-ink-muted hover:bg-white/5 hover:text-ink md:inline-flex">
           <Question size={20} aria-hidden /><span className="sr-only">Aide</span>
-        </a>
+        </Link>
         <ButtonLink href="/propagande" className="h-9 px-4 text-sm">Commencer</ButtonLink>
       </div>
     </header>

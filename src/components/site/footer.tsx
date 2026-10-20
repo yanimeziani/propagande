@@ -7,13 +7,14 @@ import { sections } from "@/lib/showcase";
 const cols = [
   { title: "Outils", links: [["Propagande", "/propagande"], ["Agent double", "/agent-double"], ["Tarifs", "/tarifs"]] },
   { title: "Exemples", links: sections.map((s) => [s.title, `/#${s.id}`]) },
+  { title: "Aide", links: [["Questions fréquentes", "/aide"], ["Confidentialité", "/confidentialite"]] },
 ];
 
 /** Footer: the line, the stamp, and link columns that only point to real pages. */
 export function Footer() {
   return (
     <footer className="mt-24 border-t border-glass-rim">
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 pt-14 pb-10 md:grid-cols-[1.6fr_repeat(2,1fr)] md:px-6">
+      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 pt-14 pb-10 md:grid-cols-[1.6fr_repeat(3,1fr)] md:px-6">
         <div className="flex flex-col items-start gap-5">
           <Logo />
           <p className="flex flex-col gap-1 text-[40px] leading-[0.95] md:text-[52px]">

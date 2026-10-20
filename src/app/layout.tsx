@@ -9,8 +9,8 @@ const stencil = Big_Shoulders_Stencil({ variable: "--font-stencil-src", subsets:
 const typewriter = Special_Elite({ variable: "--font-typewriter-src", subsets: ["latin"], weight: "400", fallback: ["Courier New", "monospace"] });
 
 export const metadata: Metadata = {
-  title: { default: "MadeLucid · Propagande et Agent double", template: "%s · MadeLucid" },
-  description: "Propagande transforme une vidéo longue en clips qui tournent. Agent double change le personnage de ta scène.",
+  title: { default: "Propagande · Ta vidéo longue, 8 clips prêts à publier", template: "%s · MadeLucid" },
+  description: "Dépose une vidéo longue, reçois 8 clips verticaux sous-titrés. Tout se passe sur ton appareil, rien n'est envoyé. Le coupeur est gratuit, pour toujours.",
 };
 
 export const viewport: Viewport = { themeColor: "#0f0f0f", colorScheme: "dark" };

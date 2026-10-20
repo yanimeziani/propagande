@@ -2,10 +2,21 @@
  *  is drawn reframed onto a canvas with the captions, and MediaRecorder captures canvas + audio. The
  *  recorder pauses during seeks, so a cold open (punch, then the moment) comes out as one clean file.
  *  Real time: a 30 s clip takes about 30 s. Nothing leaves the device. */
-import { capText, captionAt, segsLength, type Chunk, type Seg } from "./moments";
+import { captionAt, segsLength, type Chunk, type Seg } from "./moments";
+import { scaleAt, STYLES, type Style, type Zoom } from "./taste";
 
 export type ExportResult = { blob: Blob; ext: "mp4" | "webm" };
-export type ExportOpts = { captions?: Chunk[] | null; endCard?: boolean; onProgress?: (p: number) => void; size?: { w: number; h: number } };
+export type ExportOpts = {
+  captions?: Chunk[] | null;
+  endCard?: boolean;
+  style?: Style;
+  /** one framing plan per segment (source time), from taste.planClip */
+  zooms?: Zoom[][];
+  /** a music track under the voice, started at `offset` so a beat lands on the cold-open cut */
+  music?: { url: string; offset: number } | null;
+  onProgress?: (p: number) => void;
+  size?: { w: number; h: number };
+};
 
 const END_CARD_S = 1.4;
 
@@ -64,22 +75,27 @@ const seek = (v: HTMLVideoElement, t: number) =>
     v.currentTime = t;
   });
 
-/** Big bold words, white with a dark outline, the word being said in amber. Pops in for 120 ms. */
-export function drawCaption(ctx: CanvasRenderingContext2D, chunks: Chunk[], t: number, W: number, H: number, family: string) {
+/** The caption at source time t in the clip's style: the spoken word lit in the accent colour, outline or band,
+ *  a quick pop when a new chunk appears. */
+export function drawCaption(ctx: CanvasRenderingContext2D, chunks: Chunk[], t: number, W: number, H: number, family: string, style: Style = STYLES.propagande) {
   const at = captionAt(chunks, t);
   if (!at) return;
-  const size = Math.round(W * 0.085);
-  const pop = Math.min(1, at.age / 0.12);
+  const c = style.captions;
+  const size = Math.round(W * c.size * 1.18);
+  const pop = c.pop ? Math.min(1, at.age / c.pop) : 1;
   const scale = 0.86 + 0.14 * (1 - (1 - pop) ** 3);
   ctx.save();
-  ctx.translate(W / 2, H * 0.7);
+  ctx.translate(W / 2, H * c.y);
   ctx.scale(scale, scale);
-  ctx.font = `800 ${size}px ${family}`;
+  ctx.font = `${c.weight} ${size}px ${family}`;
   ctx.textBaseline = "middle";
   ctx.lineJoin = "round";
-  ctx.lineWidth = size * 0.2;
+  ctx.lineWidth = size * c.stroke;
   ctx.strokeStyle = "rgba(15,15,15,0.92)";
-  const words = at.chunk.words.map((w) => capText(w.w));
+  const words = at.chunk.words.map((w) => {
+    const x = w.w.replace(/[.,;:]$/, "");
+    return c.upper ? x.toUpperCase() : x;
+  });
   const space = ctx.measureText(" ").width;
   // wrap into lines that fit 86 % of the width
   const lines: { w: string; k: number }[][] = [[]];
@@ -91,13 +107,21 @@ export function drawCaption(ctx: CanvasRenderingContext2D, chunks: Chunk[], t: n
     lineW += (lineW ? space : 0) + ww;
   });
   const lh = size * 1.12;
+  if (c.box) {
+    const widest = Math.max(...lines.map((l) => l.reduce((s, x, n) => s + ctx.measureText(x.w).width + (n ? space : 0), 0)));
+    const pad = size * 0.35, h = lh * lines.length + pad;
+    ctx.fillStyle = c.box;
+    ctx.beginPath();
+    ctx.roundRect(-widest / 2 - pad, -h / 2, widest + pad * 2, h, pad);
+    ctx.fill();
+  }
   lines.forEach((line, li) => {
     const total = line.reduce((s, x, n) => s + ctx.measureText(x.w).width + (n ? space : 0), 0);
     let x = -total / 2;
     const y = (li - (lines.length - 1) / 2) * lh;
     for (const { w, k } of line) {
-      ctx.strokeText(w, x, y);
-      ctx.fillStyle = k === at.active ? AMBER : "#ffffff";
+      if (c.stroke) ctx.strokeText(w, x, y);
+      ctx.fillStyle = k === at.active ? c.active : c.fill;
       ctx.fillText(w, x, y);
       x += ctx.measureText(w).width + space;
     }
@@ -137,6 +161,22 @@ export async function exportClip(src: string, segs: Seg[], focusX: number, opts:
   const node = ac.createMediaElementSource(video);
   const dest = ac.createMediaStreamDestination();
   node.connect(dest); // recorded, not played through the speakers
+
+  // Music under the voice: an <audio> element that plays and pauses with the video, gain ramped in and out
+  let music: HTMLAudioElement | null = null;
+  let musicGain: GainNode | null = null;
+  if (opts.music) {
+    music = new Audio(opts.music.url);
+    music.preload = "auto";
+    await new Promise<void>((res, rej) => {
+      music!.onloadedmetadata = () => res();
+      music!.onerror = () => rej(new Error("Impossible de lire la musique."));
+    });
+    music.currentTime = opts.music.offset;
+    musicGain = ac.createGain();
+    musicGain.gain.value = 0;
+    ac.createMediaElementSource(music).connect(musicGain).connect(dest);
+  }
   for (const t of dest.stream.getAudioTracks()) stream.addTrack(t);
 
   const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5_000_000 });
@@ -144,6 +184,7 @@ export async function exportClip(src: string, segs: Seg[], focusX: number, opts:
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   const done = new Promise<void>((res) => (rec.onstop = () => res()));
 
+  const style = opts.style ?? STYLES.propagande;
   const draw = (segStart: number, k: number) => {
     const vw = video.videoWidth, vh = video.videoHeight;
     const target = size.w / size.h;
@@ -155,8 +196,17 @@ export async function exportClip(src: string, segs: Seg[], focusX: number, opts:
       sh = vw / target;
       sy = (vh - sh) / 2;
     }
+    // framing: zoom around the face (focus x, upper part of the frame) so it stays put while the frame tightens
+    const z = opts.zooms?.[k] ? scaleAt(opts.zooms[k], video.currentTime) : 1;
+    if (z > 1) {
+      const ax = Math.min(sx + sw, Math.max(sx, vw * focusX)), ay = sy + sh * 0.38;
+      sx = ax - (ax - sx) / z;
+      sy = ay - (ay - sy) / z;
+      sw /= z;
+      sh /= z;
+    }
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, size.w, size.h);
-    if (opts.captions) drawCaption(ctx, opts.captions, video.currentTime, size.w, size.h, family);
+    if (opts.captions) drawCaption(ctx, opts.captions, video.currentTime, size.w, size.h, family, style);
     // the cut back after a cold open: a short white flash, so the jump reads as intended
     const since = video.currentTime - segStart;
     if (k > 0 && since < 0.18) {
@@ -175,13 +225,19 @@ export async function exportClip(src: string, segs: Seg[], focusX: number, opts:
       draw(seg.start, k);
       if (k === 0) rec.start(250);
       else rec.resume();
-      await video.play();
+      await Promise.all([video.play(), music?.play()]);
       while (video.currentTime < seg.end && !video.ended) {
         await clock.next();
         draw(seg.start, k);
+        if (musicGain) {
+          const done = before + Math.max(0, video.currentTime - seg.start), body = total - (opts.endCard ? END_CARD_S : 0);
+          const f = style.music.fade;
+          musicGain.gain.value = style.music.gain * Math.max(0, Math.min(1, done / f, (body - done) / f));
+        }
         opts.onProgress?.(Math.min(1, (before + Math.max(0, video.currentTime - seg.start)) / total));
       }
       video.pause();
+      music?.pause();
       before += seg.end - seg.start;
       if (k < segs.length - 1) rec.pause();
     }

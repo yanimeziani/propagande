@@ -9,9 +9,10 @@ import { ToolHeader } from "@/components/site/tool-header";
 import { Button } from "@/components/ui/button";
 import { envelopeOf, fmtTime, HOP, pickMoments, shiftMoment } from "@/lib/clips/analyze";
 import { exportClip } from "@/lib/clips/export";
+import { detectBeats, musicOffset, planClip, scaleAt, STYLES, type Style, type StyleId, type Zoom } from "@/lib/clips/taste";
 import {
-  capText, captionAt, captionChunks, pickFromTranscript, segsLength, sentences, shiftBySentence, zscore,
-  type Chunk, type Hook, type HookId, type Sentence, type TMoment,
+  captionAt, captionChunks, pickFromTranscript, segsLength, sentences, shiftBySentence, zscore,
+  type Chunk, type Hook, type HookId, type Sentence, type TMoment, type Word,
 } from "@/lib/clips/moments";
 import { cacheKey, cachedWords, cacheWords, decodeMono, modelStatus, pickRuntime, SR, speechWindows, transcribe, type Progress } from "@/lib/clips/transcribe";
 import { keepModel } from "@/lib/clips/model-store";
@@ -27,7 +28,8 @@ type Clip = {
 type Phase = "idle" | "analyse" | "accord" | "pret" | "erreur";
 type Voice = "ask" | "yes" | "no";
 type Ask = { f: File; n: number; len: number; sizeMb: number; cellular: boolean; cpu: boolean };
-type Source = { env: Float32Array; z: Float32Array; duration: number; sents: Sentence[] | null; chunks: Chunk[] | null; engine: string };
+type Source = { env: Float32Array; z: Float32Array; duration: number; sents: Sentence[] | null; words: Word[] | null; engine: string };
+type Music = { name: string; url: string; beats: number[]; bpm: number };
 
 const LANG: Record<string, string> = { fr: "français", en: "anglais", es: "espagnol", ar: "arabe", pt: "portugais", de: "allemand", it: "italien" };
 const SHORT: Record<HookId, string> = { tel: "Tel quel", punch: "Punch", question: "Question" };
@@ -66,6 +68,12 @@ export function PropagandeView() {
   const [length, setLength] = useState(handoff?.length ?? 30);
   const [captions, setCaptions] = useState(true);
   const [endCard, setEndCard] = useState(true);
+  const [styleId, setStyleId] = useState<StyleId>("propagande");
+  const [music, setMusic] = useState<Music | null>(null);
+  const [musicBusy, setMusicBusy] = useState(false);
+  const style = STYLES[styleId];
+  // caption chunks follow the style (2 huge words for hype, 5 for a calm podcast)
+  const chunks = useMemo(() => (src?.words ? captionChunks(src.words, style.captions.maxWords, style.captions.maxChars) : null), [src, style]);
   const [open, setOpen] = useState<"" | "reglages" | "source">("");
   const [batch, setBatch] = useState<{ i: number; n: number } | null>(null);
   const [ask, setAsk] = useState<Ask | null>(null);
@@ -143,7 +151,7 @@ export function PropagandeView() {
       const s: Source = {
         env, z, duration,
         sents: hasSpeech ? sentences(words) : null,
-        chunks: hasSpeech ? captionChunks(words) : null,
+        words: hasSpeech ? words : null,
         engine: hasSpeech ? rt.label + (detected ? ` · langue détectée : ${LANG[detected] ?? detected}` : "") : "",
       };
       setSrc(s);
@@ -220,6 +228,43 @@ export function PropagandeView() {
     setRemoved(null);
   }
 
+  const clearOuts = () => setClips((cs) => cs.map((c) => ({ ...c, out: undefined })));
+
+  function pickStyle(id: StyleId) {
+    setStyleId(id);
+    clearOuts();
+  }
+
+  async function pickMusic(f?: File) {
+    if (!f) return;
+    setMusicBusy(true);
+    try {
+      const audio = await decodeMono(f);
+      const { beats, bpm } = detectBeats(audio, SR);
+      if (music) URL.revokeObjectURL(music.url);
+      setMusic({ name: f.name, url: URL.createObjectURL(f), beats, bpm });
+      clearOuts();
+    } catch {
+      setNotice("On n'a pas pu lire cette musique. Essaie un MP3, un M4A ou un WAV.");
+    } finally {
+      setMusicBusy(false);
+    }
+  }
+
+  function removeMusic() {
+    if (music) URL.revokeObjectURL(music.url);
+    setMusic(null);
+    clearOuts();
+  }
+
+  /** The clip's framing plan, and where the music starts so a beat lands on the cold-open cut. */
+  function planFor(c: Clip): { zooms?: Zoom[][]; offset: number } {
+    const segs = c.hooks[c.hook].segs;
+    const head = segs.length > 1 ? segs[0].end - segs[0].start : 0;
+    const offset = music ? musicOffset(music.beats, head, segsLength(segs)) : 0;
+    return { zooms: src?.words ? planClip(src.words, segs, style, src.z, HOP, music?.beats ?? [], offset) : undefined, offset };
+  }
+
   function toggleCaptions() {
     setCaptions((v) => !v);
     setClips((cs) => cs.map((c) => ({ ...c, out: undefined })));
@@ -229,7 +274,12 @@ export function PropagandeView() {
     const hook = c.hooks[c.hook];
     update(c.id, { progress: 0, out: undefined, error: undefined });
     try {
-      const r = await exportClip(url, hook.segs, c.focus, { captions: captions ? src?.chunks : null, endCard, onProgress: (p) => update(c.id, { progress: p }) });
+      const plan = planFor(c);
+      const r = await exportClip(url, hook.segs, c.focus, {
+        captions: captions ? chunks : null, endCard, style, zooms: plan.zooms,
+        music: music ? { url: music.url, offset: plan.offset } : null,
+        onProgress: (p) => update(c.id, { progress: p }),
+      });
       const out = { url: URL.createObjectURL(r.blob), ext: r.ext };
       update(c.id, { progress: undefined, out });
       pingClipMade();
@@ -300,14 +350,36 @@ export function PropagandeView() {
               <Stepper label="Clips" value={count} min={3} max={20} onChange={setCount} />
               <Stepper label="Durée (s)" value={length} min={15} max={60} step={5} onChange={setLength} />
               <Button variant="secondary" onClick={rerun} disabled={phase !== "pret" || busy}>Relancer</Button>
-              <button type="button" role="switch" aria-checked={captions && !!src?.chunks} onClick={toggleCaptions} disabled={!src?.chunks || busy}
-                className={`flex h-11 items-center gap-2 rounded-full px-4 text-[14px] font-semibold transition-colors disabled:opacity-40 ${captions && src?.chunks ? "bg-violet text-on-violet" : "border border-glass-rim text-ink-muted"}`}>
-                <ClosedCaptioning size={18} aria-hidden /> Sous-titres {captions && src?.chunks ? "oui" : "non"}
+              <button type="button" role="switch" aria-checked={captions && !!chunks} onClick={toggleCaptions} disabled={!chunks || busy}
+                className={`flex h-11 items-center gap-2 rounded-full px-4 text-[14px] font-semibold transition-colors disabled:opacity-40 ${captions && chunks ? "bg-violet text-on-violet" : "border border-glass-rim text-ink-muted"}`}>
+                <ClosedCaptioning size={18} aria-hidden /> Sous-titres {captions && chunks ? "oui" : "non"}
               </button>
               <button type="button" role="switch" aria-checked={endCard} onClick={() => { setEndCard((v) => !v); setClips((cs) => cs.map((c) => ({ ...c, out: undefined }))); }} disabled={busy}
                 className={`flex h-11 items-center gap-2 rounded-full px-4 text-[14px] font-semibold transition-colors disabled:opacity-40 ${endCard ? "bg-violet text-on-violet" : "border border-glass-rim text-ink-muted"}`}>
                 Signature « Fait avec Propagande » {endCard ? "oui" : "non"}
               </button>
+              <div className="flex flex-col gap-1">
+                <span className="text-[13px] font-semibold text-ink-muted">Style</span>
+                <div role="radiogroup" aria-label="Style des clips" className="glass flex h-11 items-center gap-1 rounded-full p-1">
+                  {Object.values(STYLES).map((st) => (
+                    <button key={st.id} type="button" role="radio" aria-checked={styleId === st.id} onClick={() => pickStyle(st.id)} disabled={busy}
+                      className={`h-9 rounded-full px-3.5 text-[13px] font-semibold transition-colors disabled:opacity-40 ${styleId === st.id ? "bg-corail text-on-corail" : "text-ink-muted hover:text-ink"}`}>
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[13px] font-semibold text-ink-muted">Musique (sur le temps)</span>
+                <div className="flex items-center gap-2">
+                  <label className={`flex h-11 cursor-pointer items-center gap-2 rounded-full border border-glass-rim px-4 text-[14px] font-semibold hover:bg-white/5 ${musicBusy || busy ? "pointer-events-none opacity-50" : ""}`}>
+                    {musicBusy ? "On cherche le tempo…" : music ? `${music.name.slice(0, 22)} · ${music.bpm} BPM` : "Ajouter une musique"}
+                    <input type="file" accept="audio/*" className="sr-only" onChange={(e) => void pickMusic(e.target.files?.[0])} />
+                  </label>
+                  {music && <button type="button" onClick={removeMusic} disabled={busy} className="text-[13px] font-semibold text-lilas hover:underline">Retirer</button>}
+                </div>
+                <span className="text-[12px] text-ink-muted">Seulement une musique que tu as le droit d&apos;utiliser.</span>
+              </div>
               <p className="max-w-[52ch] text-[13px] leading-snug text-ink-muted">
                 On coupe sur des phrases complètes, on choisit les moments au texte et au son, et on te propose d&apos;ouvrir sur la meilleure phrase.
                 {src?.engine && <> Voix transcrite sur ton appareil ({src.engine}).</>}
@@ -341,7 +413,7 @@ export function PropagandeView() {
               {phase === "pret" && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4">
                   {clips.map((c, i) => (
-                    <ClipCard key={c.id} n={i + 1} c={c} src={url} chunks={captions ? src?.chunks ?? null : null} disabled={busy}
+                    <ClipCard key={c.id} n={i + 1} c={c} src={url} chunks={captions ? chunks : null} style={style} zooms={planFor(c).zooms} disabled={busy}
                       onHook={(k) => update(c.id, { hook: k, out: undefined })}
                       onFocus={(f) => update(c.id, { focus: f, out: undefined })}
                       onEarlier={() => shift(c, -1)} onLater={() => shift(c, 1)} onRemove={() => remove(c)}
@@ -465,8 +537,8 @@ function SourcePanel({ url, env, duration, clips }: { url: string; env: Float32A
   );
 }
 
-function ClipCard({ n, c, src, chunks, disabled, onHook, onFocus, onEarlier, onLater, onRemove, onExport, onSave }: {
-  n: number; c: Clip; src: string; chunks: Chunk[] | null; disabled: boolean;
+function ClipCard({ n, c, src, chunks, style, zooms, disabled, onHook, onFocus, onEarlier, onLater, onRemove, onExport, onSave }: {
+  n: number; c: Clip; src: string; chunks: Chunk[] | null; style: Style; zooms?: Zoom[][]; disabled: boolean;
   onHook: (k: number) => void; onFocus: (f: number) => void; onEarlier: () => void; onLater: () => void; onRemove: () => void; onExport: () => void; onSave: () => void;
 }) {
   const v = useRef<HTMLVideoElement>(null);
@@ -489,6 +561,7 @@ function ClipCard({ n, c, src, chunks, disabled, onHook, onFocus, onEarlier, onL
   function stop() {
     cancelAnimationFrame(raf.current);
     v.current?.pause();
+    if (v.current) v.current.style.transform = "";
     setPlaying(false);
     setCap(null);
   }
@@ -508,12 +581,14 @@ function ClipCard({ n, c, src, chunks, disabled, onHook, onFocus, onEarlier, onL
         el.currentTime = segs[k].start;
         setCut((x) => x + 1);
       }
+      // the same framing plan as the export, applied straight to the element (no re-render per frame)
+      if (zooms?.[k]) el.style.transform = `scale(${scaleAt(zooms[k], t)})`;
       const at = chunks ? captionAt(chunks, t) : null;
       setCap((prev) => {
         if (!at) return null;
         const key = at.chunk.t0;
         if (prev && prev.key === key && prev.active === at.active) return prev;
-        return { words: at.chunk.words.map((w) => capText(w.w)), active: at.active, key };
+        return { words: at.chunk.words.map((w) => w.w.replace(/[.,;:]$/, "")), active: at.active, key };
       });
       raf.current = requestAnimationFrame(tick);
     };
@@ -542,11 +617,15 @@ function ClipCard({ n, c, src, chunks, disabled, onHook, onFocus, onEarlier, onL
         aria-label={reframe ? "Cadrage : glisse ou utilise les flèches" : undefined}
         aria-valuenow={reframe ? Math.round(c.focus * 100) : undefined}
       >
-        <video ref={v} src={src} playsInline preload="metadata" className="h-full w-full object-cover" style={{ objectPosition: `${c.focus * 100}% 50%` }} />
+        <video ref={v} src={src} playsInline preload="metadata" className="h-full w-full object-cover"
+          style={{ objectPosition: `${c.focus * 100}% 50%`, transformOrigin: `${c.focus * 100}% 38%` }} />
         {cut > 0 && playing && <span key={cut} className="cut-flash pointer-events-none absolute inset-0 bg-white" />}
         {cap && (
-          <p aria-hidden className="caption-text pointer-events-none absolute inset-x-[7%] top-[70%] -translate-y-1/2 text-center text-[8.5cqw] leading-[1.12] font-extrabold">
-            {cap.words.map((w, k) => <span key={k} className={k === cap.active ? "text-corail" : "text-white"}>{w}{k < cap.words.length - 1 ? " " : ""}</span>)}
+          <p aria-hidden className={`pointer-events-none absolute inset-x-[7%] -translate-y-1/2 text-center leading-[1.12] ${style.captions.stroke ? "caption-text" : "caption-plain"}`}
+            style={{ top: `${style.captions.y * 100}%`, fontSize: `${style.captions.size * 118}cqw`, fontWeight: style.captions.weight, textTransform: style.captions.upper ? "uppercase" : "none" }}>
+            <span style={style.captions.box ? { background: style.captions.box, padding: "0.15em 0.4em", borderRadius: "0.35em", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" } : undefined}>
+              {cap.words.map((w, k) => <span key={k} style={{ color: k === cap.active ? style.captions.active : style.captions.fill }}>{w}{k < cap.words.length - 1 ? " " : ""}</span>)}
+            </span>
           </p>
         )}
         <span className="absolute top-2 left-2 rounded-full bg-black/60 px-2.5 py-1 font-mono text-[12px] text-white tabular backdrop-blur">#{n} · {fmtTime(segsLength(segs))}</span>

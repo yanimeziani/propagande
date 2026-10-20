@@ -78,7 +78,8 @@ export function transcribe(
   windows: [number, number][],
   runtime: Runtime,
   onProgress: (p: Progress) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  fresh = false
 ): Promise<Word[]> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL("./transcribe.worker.ts", import.meta.url), { type: "module" });
@@ -120,7 +121,7 @@ export function transcribe(
     };
     worker.onerror = (e) => { stop(); reject(new Error(e.message || "worker")); };
     const copy = new Float32Array(audio); // the worker takes ownership of this copy
-    const msg: WorkerIn = { type: "run", audio: copy, windows, runtime, language: "auto" };
+    const msg: WorkerIn = { type: "run", audio: copy, windows, runtime, language: "auto", fresh };
     worker.postMessage(msg, [copy.buffer]);
   });
 }

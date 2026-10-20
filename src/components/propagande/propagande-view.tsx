@@ -133,7 +133,7 @@ export function PropagandeView() {
                 if (p.stage === "lang") { lang = p.code; return; }
                 if (p.stage === "speech" && !started) { started = Date.now(); setSpeechStart(started); }
                 setStage(p);
-              }, ctrl.signal)
+              }, ctrl.signal, voice === "yes")
             : [];
           if (words.length) { void cacheWords(key, words); void keepModel(); }
           if (lang) detected = lang;

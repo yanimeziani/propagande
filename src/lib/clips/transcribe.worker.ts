@@ -6,7 +6,7 @@ import { env, pipeline, type AutomaticSpeechRecognitionPipeline } from "@hugging
 import { modelStore } from "./model-store";
 
 export type Runtime = { model: string; device: "webgpu" | "wasm"; dtype: Record<string, string> };
-export type WorkerIn = { type: "run"; audio: Float32Array; windows: [number, number][]; runtime: Runtime; language: string };
+export type WorkerIn = { type: "run"; audio: Float32Array; windows: [number, number][]; runtime: Runtime; language: string; fresh: boolean };
 export type WorkerOut =
   | { type: "load"; file: string; loaded: number; total: number }
   | { type: "ready" }
@@ -31,17 +31,21 @@ let loadedKey = "";
 const post = (m: WorkerOut) => (self as unknown as DedicatedWorkerGlobalScope).postMessage(m);
 
 self.onmessage = async (e: MessageEvent<WorkerIn>) => {
-  const { audio, windows, runtime, language } = e.data;
+  const { audio, windows, runtime, language, fresh } = e.data;
   try {
     const key = `${runtime.model}|${runtime.device}|${JSON.stringify(runtime.dtype)}`;
     if (!asr || key !== loadedKey) {
       loadedKey = key;
+      // The progress callback makes the library ask Hugging Face for every file's size, even when the model is
+      // already stored. Only pass it on a real first download, so a run with the model here touches no network.
       asr = pipeline("automatic-speech-recognition", runtime.model, {
         device: runtime.device,
         dtype: runtime.dtype as never,
-        progress_callback: (p: { status: string; file?: string; loaded?: number; total?: number }) => {
-          if (p.status === "progress" && p.file) post({ type: "load", file: p.file, loaded: p.loaded ?? 0, total: p.total ?? 0 });
-        },
+        ...(fresh
+          ? { progress_callback: (p: { status: string; file?: string; loaded?: number; total?: number }) => {
+              if (p.status === "progress" && p.file) post({ type: "load", file: p.file, loaded: p.loaded ?? 0, total: p.total ?? 0 });
+            } }
+          : {}),
       }) as Promise<AutomaticSpeechRecognitionPipeline>;
     }
     const run = await asr;

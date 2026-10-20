@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Big_Shoulders_Stencil, Geist, Geist_Mono, Special_Elite } from "next/font/google";
+import { Offline } from "@/components/site/offline";
 import "./globals.css";
 
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
@@ -18,7 +19,7 @@ export const viewport: Viewport = { themeColor: "#0f0f0f", colorScheme: "dark" }
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr-CA">
-      <body className={`${geist.variable} ${geistMono.variable} ${stencil.variable} ${typewriter.variable}`}>{children}</body>
+      <body className={`${geist.variable} ${geistMono.variable} ${stencil.variable} ${typewriter.variable}`}>{children}<Offline /></body>
     </html>
   );
 }

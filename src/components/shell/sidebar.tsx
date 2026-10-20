@@ -12,7 +12,7 @@ const groups: { title: string; items: Item[] }[] = [
     { href: "/agent-double", label: "Agent double", Icon: Detective, badge: "Bêta", match: (p) => p.startsWith("/agent-double") },
   ] },
   { title: "Mes créations", items: [
-    { label: "Clips", Icon: FilmStrip, badge: "Bientôt" },
+    { href: "/creations", label: "Clips", Icon: FilmStrip, match: (p) => p.startsWith("/creations") },
     { label: "Projets", Icon: FolderSimple, badge: "Bientôt" },
   ] },
   { title: "Inspiration", items: [

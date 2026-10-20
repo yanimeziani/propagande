@@ -5,6 +5,7 @@ import { ToolHeader } from "@/components/site/tool-header";
 import { Button } from "@/components/ui/button";
 import { fmtTime } from "@/lib/clips/analyze";
 import { takeHandoff } from "@/lib/handoff";
+import { HistoryPanel } from "@/components/library/history-panel";
 
 type Target = { x: number; y: number; t: number };
 type Who = "ia" | "reelle";
@@ -147,6 +148,8 @@ export function AgentDoubleView() {
           </p>
         </div>
       </section>
+
+      <HistoryPanel tool="agent-double" />
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { analyzeFile, fmtTime, type Moment } from "@/lib/clips/analyze";
 import { exportClip } from "@/lib/clips/export";
 import { takeHandoff, type Handoff } from "@/lib/handoff";
+import { addCreation } from "@/lib/library";
+import { HistoryPanel } from "@/components/library/history-panel";
 
 type Clip = Moment & { focus: number; progress?: number; out?: { url: string; ext: string } ; error?: string };
 type Status = { kind: "idle" } | { kind: "analyse" } | { kind: "pret" } | { kind: "erreur"; msg: string };
@@ -64,6 +66,8 @@ export function PropagandeView() {
     try {
       const r = await exportClip(url, c, c.focus, (p) => update(c.id, { progress: p }));
       update(c.id, { progress: undefined, out: { url: URL.createObjectURL(r.blob), ext: r.ext } });
+      const n = clips.findIndex((x) => x.id === c.id) + 1;
+      await addCreation({ tool: "propagande", title: `Moment ${n} · ${file?.name.replace(/\.[^.]+$/, "") ?? "vidéo"}`, source: file?.name ?? "", start: c.start, end: c.end, ext: r.ext, score: c.score }, r.blob).catch(() => {});
     } catch (e) {
       update(c.id, { progress: undefined, error: e instanceof Error ? e.message : "L'export a échoué." });
     }
@@ -73,10 +77,15 @@ export function PropagandeView() {
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 pb-32 md:p-6">
       <ToolHeader tool="propagande" line="Une vidéo longue devient des clips verticaux qui tournent partout." note="Tout reste sur ton appareil. Rien n'est envoyé." />
 
-      {!file && <DropZone onPick={onPick} />}
+      {!file && (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <DropZone onPick={onPick} />
+          <HistoryPanel tool="propagande" className="max-h-[70vh]" />
+        </div>
+      )}
 
       {file && (
-        <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_300px]">
           {/* Source + timeline */}
           <section className="glass flex min-w-0 flex-col gap-4 rounded-[24px] p-4" aria-label="Vidéo source">
             <div className="flex items-center justify-between gap-3">
@@ -110,6 +119,7 @@ export function PropagandeView() {
               ))}
             </div>
           </section>
+          <HistoryPanel tool="propagande" className="lg:col-span-2 2xl:col-span-1 2xl:max-h-[calc(100dvh-180px)]" />
         </div>
       )}
     </div>

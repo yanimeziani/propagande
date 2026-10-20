@@ -19,7 +19,7 @@ Decided by the Roast Room council on 2026-10-20: **GO on B** (B 8.3, support 8.1
 | 9 | **A way to pay, by Nov 7** (does not block Oct 25). The Nov 10 ask needs a working checkout (a payment link from a payment provider is enough to start), or the ask can't close (Hormozi, Buffett). Sales tax: in Canada, a small supplier under 30 000 $ of sales over four quarters doesn't have to register for GST/QST; confirm with an accountant. | Tarifs page |
 | 10 | **What Pro is** (see section 1b). | `src/lib/offer.ts` → `PRO` |
 | 11 | **Model fallback cap.** Pick where the mirror would live and the trigger (section 7). | This file |
-| 12 | **Which account posts:** @yanimeziani or a new Propagande account, on TikTok, Reels and Shorts. | Section 5 |
+| 12 | ~~**Which account posts.**~~ **Done 2026-10-20: @yanimeziani** on TikTok, Reels and Shorts. | Section 5 |
 
 ### The free-forever line (to approve)
 

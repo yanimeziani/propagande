@@ -2,7 +2,7 @@
 
 Drop a long video, get 8 vertical clips with word-by-word captions. Everything runs in the browser: Whisper large-v3-turbo on the user's GPU (WebGPU), cuts on whole sentences, three openings per clip (as is, punch first, question first), export to 9:16 MP4. The video never leaves the device, so a clip costs nothing to serve.
 
-Live: madelucid.com (French first). License: AGPL-3.0 (see `LICENSE`).
+Live: [madelucid.com/propagande](https://madelucid.com/propagande/) (French first). Source: [github.com/yanimeziani/propagande](https://github.com/yanimeziani/propagande). License: AGPL-3.0 (see `LICENSE`).
 
 ## Run it
 

@@ -33,7 +33,7 @@ export function Footer() {
         ))}
       </div>
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 border-t border-glass-rim px-4 py-6 pb-28 text-[13px] text-ink-muted md:flex-row md:justify-between md:px-6 md:pb-6">
-        <span>Fait au Québec. Code ouvert (AGPL).</span>
+        <span>Fait au Québec. <a href="https://github.com/yanimeziani/propagande" className="underline hover:text-ink">Code ouvert (AGPL)</a>.</span>
         <span>© {new Date().getFullYear()} MadeLucid</span>
       </div>
     </footer>

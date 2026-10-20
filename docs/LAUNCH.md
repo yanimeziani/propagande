@@ -85,6 +85,8 @@ Log each tester: device, browser, time to the first clip, finished yes or no, ca
 
 ## 5. Content: 3 clips a day, 45 minutes a day at most
 
+Day by day: `data/content/propagande-calendar.csv` and its guide `propagande-calendar.md` (in the MadeLucid workspace, not this repo).
+
 - Twice a week, film one long video (a live, a talk to camera, a walk-through). Each gives 8 clips: 16 a week. The other 5 posts are a second opening (punch or question) of the week's strongest clips, posted on a different platform than the first version. That makes 21, which is 3 a day (Gary V's math check).
 - Post 3 clips a day on TikTok, Reels and Shorts. If a day goes over 45 minutes, post 1 that day (the council's floor).
 - The launch clip is the demo itself: a long video drops in, the timer, 8 clips out, « 0 $ ». One plain line and the link. No emojis, no comment bait, no teaser.

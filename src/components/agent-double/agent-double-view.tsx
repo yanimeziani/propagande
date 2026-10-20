@@ -5,17 +5,19 @@ import { ToolHeader } from "@/components/site/tool-header";
 import { Button } from "@/components/ui/button";
 import { fmtTime } from "@/lib/clips/analyze";
 import { takeHandoff } from "@/lib/handoff";
+import { coverage, frameAt, trackPerson, type Track, type TrackProgress } from "@/lib/double/track";
 import { HistoryPanel } from "@/components/library/history-panel";
 
 type Target = { x: number; y: number; t: number };
 type Who = "ia" | "reelle";
 
+// Every model is open (Apache 2.0). Step 1 runs on your device today; steps 2-5 run on our GPU (Pro).
 const STEPS = [
-  { k: "suivre", label: "Suivre la personne", detail: "Le masque suit la personne sur chaque image (SAM 2)." },
-  { k: "profondeur", label: "Profondeur et pose", detail: "Le nouveau personnage bouge comme l'original." },
-  { k: "generer", label: "Générer", detail: "Le personnage est peint dans la scène (Wan VACE, hébergé chez nous)." },
-  { k: "composer", label: "Composer", detail: "Bords, couleur et grain ajustés à ta vidéo." },
-  { k: "son", label: "Son original", detail: "On remet le son de ta vidéo, intact." },
+  { k: "suivre", label: "Suivre la personne", detail: "EdgeTAM trace la personne sur chaque image, sur ton appareil." },
+  { k: "pose", label: "Pose et visage", detail: "On lit ses mouvements et son visage, image par image." },
+  { k: "remplacer", label: "Remplacer", detail: "Wan2.2-Animate peint le nouveau personnage à sa place." },
+  { k: "lumiere", label: "Même lumière", detail: "Le module de relighting accorde sa lumière à ta scène." },
+  { k: "son", label: "Son et mention IA", detail: "Ton son d'origine, et la mention « modifié par IA »." },
 ];
 
 /** Agent double: your scene, a new character. Inputs work today; generation waits for the GPU engine. */
@@ -30,29 +32,91 @@ export function AgentDoubleView() {
   const [ownVideo, setOwnVideo] = useState(false);
   const [consent, setConsent] = useState(false);
   const v = useRef<HTMLVideoElement>(null);
+  const overlay = useRef<HTMLCanvasElement>(null);
+  const [track, setTrack] = useState<Track | null>(null);
+  const [tracking, setTracking] = useState<{ p: TrackProgress | null; error?: string } | null>(null);
+  const run = useRef<AbortController | null>(null);
+
+  async function follow(src: string, t: Target) {
+    run.current?.abort();
+    const ctrl = new AbortController();
+    run.current = ctrl;
+    setTrack(null);
+    setTracking({ p: null });
+    try {
+      const tr = await trackPerson(src, t, (p) => { if (!ctrl.signal.aborted) setTracking({ p }); }, { signal: ctrl.signal });
+      if (!ctrl.signal.aborted) { setTrack(tr); setTracking(null); }
+    } catch (e) {
+      if (!ctrl.signal.aborted) setTracking({ p: null, error: e instanceof Error ? e.message : "Le suivi n'a pas marché." });
+    }
+  }
+  useEffect(() => () => run.current?.abort(), []);
+
+  // Draw the followed person over the video: amber tint, in the area the video actually occupies (object-contain)
+  useEffect(() => {
+    if (!track) return;
+    let raf = 0;
+    const tint = new ImageData(track.width, track.height);
+    const off = new OffscreenCanvas(track.width, track.height);
+    const octx = off.getContext("2d")!;
+    let last = -1;
+    const draw = () => {
+      const el = v.current, cv = overlay.current;
+      if (el && cv) {
+        const r = el.getBoundingClientRect();
+        if (cv.width !== Math.round(r.width) || cv.height !== Math.round(r.height)) { cv.width = Math.round(r.width); cv.height = Math.round(r.height); }
+        const ctx = cv.getContext("2d")!;
+        const f = frameAt(track, el.currentTime);
+        const idx = f ? track.frames.indexOf(f) : -1;
+        if (idx !== last) {
+          last = idx;
+          const d = tint.data;
+          d.fill(0);
+          if (f?.mask) for (let i = 0; i < f.mask.length; i++) if (f.mask[i]) { d[i * 4] = 254; d[i * 4 + 1] = 139; d[i * 4 + 2] = 2; d[i * 4 + 3] = 110; }
+          octx.putImageData(tint, 0, 0);
+        }
+        const scale = Math.min(cv.width / track.width, cv.height / track.height);
+        const w = track.width * scale, h = track.height * scale;
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(off, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [track]);
 
   useEffect(() => () => { if (video) URL.revokeObjectURL(video.url); }, [video]);
   useEffect(() => () => { if (image) URL.revokeObjectURL(image.url); }, [image]);
 
-  const ready = !!video && !!image && !!target && ownVideo && (who === "ia" || consent);
+  const ready = !!video && !!image && !!track && ownVideo && (who === "ia" || consent);
   const missing = [!video && "la scène", !target && "la personne à remplacer", !image && "le nouveau personnage", !ownVideo && "tes droits sur la vidéo", who === "reelle" && !consent && "le consentement"].filter(Boolean) as string[];
 
   function mark(e: React.MouseEvent<HTMLDivElement>) {
     const el = v.current;
     if (!el) return;
-    const r = e.currentTarget.getBoundingClientRect();
     el.pause();
-    setTarget({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height, t: el.currentTime });
+    // the tap in video coordinates: the frame is letterboxed (object-contain) in the element; the controls
+    // float over the image, they don't take space
+    const el2 = el.getBoundingClientRect();
+    const boxH = el2.height;
+    const scale = Math.min(el2.width / el.videoWidth, boxH / el.videoHeight);
+    const w = el.videoWidth * scale, h = el.videoHeight * scale;
+    const x = (e.clientX - el2.left - (el2.width - w) / 2) / w, y = (e.clientY - el2.top - (boxH - h) / 2) / h;
+    if (x < 0 || x > 1 || y < 0 || y > 1) return;
+    const t = { x, y, t: el.currentTime };
+    setTarget(t);
+    if (video) void follow(video.url, t);
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 pb-32 md:p-6">
-      <ToolHeader tool="agent-double" line="Ta scène, un autre personnage. Même mouvements, même lumière, même son." note="Tes fichiers restent sur ton appareil pour l'instant." />
+      <ToolHeader tool="agent-double" line="Ta scène, un autre personnage. Même mouvements, même lumière, même son." note="Le suivi de la personne se fait sur ton appareil. La génération arrive bientôt." />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         {/* 1. Scene + target */}
         <section className="glass flex min-w-0 flex-col gap-3 rounded-[24px] p-4" aria-labelledby="scene">
-          <h2 id="scene" className="flex items-center gap-2 text-[15px] font-semibold"><Step n={1} done={!!target} /> La scène et la personne à remplacer</h2>
+          <h2 id="scene" className="flex items-center gap-2 text-[15px] font-semibold"><Step n={1} done={!!track} /> La scène et la personne à remplacer</h2>
           {!video ? (
             <Drop accept="video/*" icon={<VideoCamera size={28} weight="bold" />} title="Dépose ta vidéo" sub="10 secondes ou moins pour commencer. MP4 ou MOV."
               onPick={(f) => { setVideo({ url: URL.createObjectURL(f), name: f.name }); setTarget(null); }} />
@@ -60,6 +124,7 @@ export function AgentDoubleView() {
             <>
               <div className="relative overflow-hidden rounded-[18px] bg-black">
                 <video ref={v} src={video.url} controls playsInline className="block max-h-[60vh] w-full object-contain" />
+                <canvas ref={overlay} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" />
                 <div role="button" tabIndex={0} aria-label="Toucher la personne à remplacer" onClick={mark}
                   onKeyDown={(e) => { if (e.key === "Enter" && v.current) setTarget({ x: 0.5, y: 0.5, t: v.current.currentTime }); }}
                   className="absolute inset-x-0 top-0 bottom-12 cursor-crosshair" />
@@ -70,10 +135,13 @@ export function AgentDoubleView() {
                 )}
               </div>
               <p className="flex items-center gap-2 text-[14px] text-ink-muted">
-                <Crosshair size={18} aria-hidden />
-                {target ? <>Cible posée à <span className="font-mono tabular">{fmtTime(target.t)}</span>. Touche ailleurs pour la déplacer.</> : "Mets sur pause, puis touche la personne à remplacer."}
+                <Crosshair size={18} aria-hidden className="shrink-0" />
+                <span>{tracking?.error ? <span className="text-rec">{tracking.error}</span>
+                  : tracking ? (tracking.p?.stage === "frames" ? `On suit la personne : ${tracking.p.done} images sur ${tracking.p.total}…` : tracking.p?.stage === "model" ? `Préparation du suivi (${Math.round(tracking.p.loaded / 1e6)} Mo sur ${Math.round(tracking.p.total / 1e6) || "…"})…` : "Préparation du suivi…")
+                  : track ? <>Personne suivie sur <span className="font-mono tabular">{Math.round(coverage(track) * 100)} %</span> des images. Lance la vidéo pour vérifier ; touche ailleurs pour changer.</>
+                  : target ? <>Cible posée à <span className="font-mono tabular">{fmtTime(target.t)}</span>.</> : "Mets sur pause, puis touche la personne à remplacer."}</span>
               </p>
-              <button type="button" onClick={() => { setVideo(null); setTarget(null); }} className="w-fit text-[14px] font-semibold text-lilas hover:underline">Changer de vidéo</button>
+              <button type="button" onClick={() => { run.current?.abort(); setVideo(null); setTarget(null); setTrack(null); setTracking(null); }} className="w-fit text-[14px] font-semibold text-lilas hover:underline">Changer de vidéo</button>
             </>
           )}
         </section>

@@ -1,26 +1,147 @@
 @import "tailwindcss";
 
+/* MadeLucid tokens, mirrored from the design system (https://claude.ai/artifact/FC6gQKfP94ryh2RT7ouXn2).
+   Nuit (dark) is the default; Jour applies only when data-theme="light" is set. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface-100: #07060b;
+  --surface-200: #13111b;
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-rim: rgba(255, 255, 255, 0.14);
+  --line: #2a2533;
+  --ink: #f4f1ff;
+  --ink-muted: #a9a2b8;
+  --corail: #ff5a3c;
+  --on-corail: #120f1c;
+  --violet: #6a5cff;
+  --on-violet: #ffffff;
+  --rose: #e0577e;
+  --lilas: #cfcaf9;
+  --rec: #ff3d5a;
+  --ok: #5ee6b0;
+  --focus: #cfcaf9;
+  --shadow-lift: 0 12px 32px rgba(0, 0, 0, 0.55);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --surface-100: #fbfaff;
+  --surface-200: #ffffff;
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-rim: rgba(18, 15, 28, 0.1);
+  --line: #e4dfea;
+  --ink: #120f1c;
+  --ink-muted: #5a5468;
+  --corail: #d63a1c;
+  --on-corail: #ffffff;
+  --violet: #4a3df0;
+  --rose: #c2335f;
+  --lilas: #4a3df0;
+  --rec: #d4183a;
+  --ok: #0a7a55;
+  --focus: #4a3df0;
+  --shadow-lift: 0 10px 28px rgba(18, 15, 28, 0.12);
+  color-scheme: light;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-surface-100: var(--surface-100);
+  --color-surface-200: var(--surface-200);
+  --color-glass: var(--glass);
+  --color-glass-rim: var(--glass-rim);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-corail: var(--corail);
+  --color-on-corail: var(--on-corail);
+  --color-violet: var(--violet);
+  --color-on-violet: var(--on-violet);
+  --color-rose: var(--rose);
+  --color-lilas: var(--lilas);
+  --color-rec: var(--rec);
+  --color-ok: var(--ok);
+  --font-display: var(--font-bricolage);
+  --font-sans: var(--font-figtree);
   --font-mono: var(--font-geist-mono);
+  --radius-sm: 14px;
+  --radius-md: 24px;
+  --radius-lg: 36px;
+  --shadow-lift: var(--shadow-lift);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--surface-100);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface-100);
+  color: var(--ink);
+  font-family: var(--font-figtree), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* A glass panel: the fill, a blur and a 1px rim. */
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-rim);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+/* The light edge: corail -> rose -> violet, like the light on the mark. */
+.light-edge {
+  position: relative;
+  isolation: isolate;
+}
+.light-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--corail), var(--rose), var(--violet));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hero wall: content is doubled, so moving by half loops seamlessly */
+@keyframes wall-up {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+@keyframes wall-down {
+  from { transform: translateY(-50%); }
+  to { transform: translateY(0); }
+}
+.wall-col-up { animation: wall-up var(--wall-dur, 40s) linear infinite; }
+.wall-col-down { animation: wall-down var(--wall-dur, 40s) linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .wall-col { animation: none !important; }
 }

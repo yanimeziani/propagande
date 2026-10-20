@@ -1,0 +1,38 @@
+/** Clips on the hero wall. Today: MadeLucid's own renders. Licensed creator clips can be added with a
+ *  `source` (creator, link and the real view count read from the platform); never show a number we did not read. */
+export type WallClip = { slug: string; label: string; source?: { creator: string; url: string; views: number } };
+
+export const wallClips: WallClip[] = [
+  { slug: "fumee", label: "Transition fumée" },
+  { slug: "anime", label: "Générique anime" },
+  { slug: "rap-foule", label: "Rap de foule" },
+  { slug: "montreal-street", label: "Montréal, heure dorée" },
+  { slug: "eclaboussure", label: "Éclaboussure" },
+  { slug: "ton-chalet", label: "Crochet en 1 seconde" },
+  { slug: "fenetre-auto", label: "Fenêtre d'auto" },
+  { slug: "agents", label: "Agents IA" },
+  { slug: "tenues", label: "Tenues de la semaine" },
+  { slug: "particules", label: "Particules" },
+  { slug: "danse", label: "Danse libre" },
+  { slug: "regard", label: "Micro-émotion" },
+  { slug: "contre-plongee", label: "Contre-plongée" },
+  { slug: "pas-encore", label: "Glitch" },
+  { slug: "heure-doree", label: "Heure dorée" },
+  { slug: "desk-macro", label: "Macro" },
+  { slug: "snack-nuit", label: "Snack de nuit" },
+  { slug: "profondeur", label: "3D" },
+  { slug: "notification", label: "Notification" },
+  { slug: "tasse", label: "Produit" },
+  { slug: "type", label: "Texte qui frappe" },
+  { slug: "bureau", label: "Bureau" },
+  { slug: "fluide", label: "Fluide" },
+  { slug: "scroll-salon", label: "Scroll" },
+  { slug: "la-lumiere", label: "Lumière" },
+  { slug: "doigts", label: "Gros plan" },
+  { slug: "rien-invente", label: "Preuve" },
+  { slug: "chalet-16x9", label: "Avant / après" },
+  { slug: "systemes", label: "Grille" },
+  { slug: "en-francais", label: "En français" },
+  { slug: "forme", label: "Formes" },
+  { slug: "vitesse", label: "Vitesse" },
+];

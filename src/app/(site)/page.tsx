@@ -1,9 +1,16 @@
+import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { GlassLoop } from "@/components/brand/glass-loop";
-import { HeroWall } from "@/components/site/hero-wall";
 import { FormatCard } from "@/components/formats/format-card";
+import { Banner } from "@/components/home/banner";
+import { MediaSection } from "@/components/home/media-section";
+import { PromptBox } from "@/components/home/prompt-box";
+import { ToolCards } from "@/components/home/tool-cards";
+import { LazyVideo } from "@/components/media/lazy-video";
+import { HeroWall } from "@/components/site/hero-wall";
 import { ButtonLink } from "@/components/ui/button";
 import { formats } from "@/lib/formats";
+import { sections } from "@/lib/showcase";
 
 const steps = [
   { title: "Trouve ton format", body: "Des formats qui marchent déjà, expliqués plan par plan." },
@@ -11,12 +18,16 @@ const steps = [
   { title: "Publie, puis réponds", body: "On monte, on publie au bon moment, et les réponses arrivent dans Messages." },
 ];
 
+function H2({ children, id }: { children: React.ReactNode; id?: string }) {
+  return <h2 id={id} className="font-display text-[26px] leading-none font-extrabold tracking-[-0.015em] uppercase md:text-[34px]">{children}</h2>;
+}
+
 export default function ExplorePage() {
-  const trending = formats.filter((f) => f.trending).concat(formats.filter((f) => !f.trending));
+  const [mode, cinema, motion, quotidien] = sections;
   return (
     <>
       {/* Hero: the tilted wall of videos, the glass mark, one line, one action */}
-      <section className="relative isolate flex min-h-[86svh] items-center justify-center overflow-hidden px-4 py-24">
+      <section className="relative isolate flex min-h-[80svh] items-center justify-center overflow-hidden px-4 py-24">
         <HeroWall columns={6} />
         <div className="relative z-10 flex max-w-3xl flex-col items-center gap-6 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -32,70 +43,103 @@ export default function ExplorePage() {
             <ButtonLink href="/creer">
               Créer ma première vidéo <ArrowRight size={18} weight="bold" aria-hidden />
             </ButtonLink>
-            <ButtonLink href="#formats" variant="secondary">
-              Voir les formats
-            </ButtonLink>
+            <ButtonLink href="#formats" variant="secondary">Voir les formats</ButtonLink>
           </div>
         </div>
       </section>
 
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-4 pt-6 md:px-6">
-      {/* Trending row */}
-      <section className="flex flex-col gap-5" aria-labelledby="tendance">
-        <div className="flex items-end justify-between gap-4">
-          <h2 id="tendance" className="font-display text-[28px] leading-tight font-extrabold tracking-[-0.015em] md:text-[36px]">
-            Ce qui marche cette semaine
-          </h2>
-          <span className="font-mono text-[13px] text-ink-muted tabular">{formats.length} formats</span>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-16 px-4 md:gap-20 md:px-6">
+        {/* Prompt box, OpenArt-style */}
+        <div className="-mt-16 relative z-10">
+          <PromptBox />
         </div>
-        <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
-          {trending.map((f) => (
-            <div key={f.slug} className="w-[62vw] shrink-0 snap-start sm:w-[240px]">
-              <FormatCard f={f} />
-            </div>
-          ))}
-        </div>
-      </section>
 
-      {/* How it works: a real sequence, so it's numbered */}
-      <section className="flex flex-col gap-5" aria-labelledby="comment">
-        <h2 id="comment" className="font-display text-[28px] leading-tight font-extrabold tracking-[-0.015em] md:text-[36px]">
-          Comment ça marche
-        </h2>
-        <ol className="grid gap-4 md:grid-cols-3">
-          {steps.map((s, i) => (
-            <li key={s.title} className="glass light-edge flex flex-col gap-3 rounded-[24px] p-6">
-              <span className="font-mono text-[13px] text-lilas tabular">0{i + 1}</span>
-              <h3 className="font-display text-[22px] leading-tight font-bold">{s.title}</h3>
-              <p className="text-[16px] leading-[1.5] text-ink-muted">{s.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+        {/* Tool row */}
+        <section className="flex flex-col gap-4" aria-labelledby="outils">
+          <H2 id="outils">Tout pour ta vidéo</H2>
+          <ToolCards />
+        </section>
 
-      {/* All formats */}
-      <section id="formats" className="flex scroll-mt-24 flex-col gap-5" aria-labelledby="tous">
-        <h2 id="tous" className="font-display text-[28px] leading-tight font-extrabold tracking-[-0.015em] md:text-[36px]">
-          Tous les formats
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
-          {formats.map((f) => (
-            <FormatCard key={f.slug} f={f} />
+        {/* Category tabs → panels */}
+        <nav aria-label="Catégories" className="no-scrollbar -mb-10 flex gap-2 overflow-x-auto">
+          {sections.map((s) => (
+            <Link key={s.id} href={`#${s.id}`} className="glass h-9 shrink-0 rounded-full px-4 text-[14px] leading-9 font-semibold text-ink-muted hover:text-ink">
+              {s.title}
+            </Link>
           ))}
-        </div>
-      </section>
+        </nav>
+        <MediaSection s={mode} />
 
-      {/* Closing band */}
-      <section className="glass light-edge relative overflow-hidden rounded-[36px] px-6 py-12 text-center md:px-12">
-        <GlassLoop className="mx-auto -mt-4 mb-2 w-full max-w-[260px]" />
-        <div className="absolute inset-0 -z-10 opacity-40" style={{ background: "radial-gradient(50% 80% at 50% 120%, var(--rose) 0%, transparent 70%)" }} aria-hidden />
-        <h2 className="font-display text-[32px] leading-tight font-extrabold tracking-[-0.015em] text-balance md:text-[44px]">Ta prochaine vidéo, ce soir.</h2>
-        <p className="mx-auto mt-3 max-w-[44ch] text-[17px] text-ink-muted">Choisis un format, filme 3 plans, on fait le reste.</p>
-        <div className="mt-6 flex justify-center">
-          <ButtonLink href="/creer">Commencer</ButtonLink>
-        </div>
-      </section>
-    </div>
+        <Banner
+          tone="corail"
+          eyebrow="Publier · bientôt"
+          title="Un format. Tous tes réseaux."
+          body="Instagram, TikTok et YouTube, publiés au bon moment, avec la légende écrite en français."
+          cta="Créer une vidéo"
+          href="/creer"
+          side={<LazyVideo slug="notification" className="mx-auto aspect-[9/16] w-full max-w-[240px] rounded-[28px] border border-black/10 object-cover shadow-lift" />}
+        />
+
+        <MediaSection s={cinema} />
+        <MediaSection s={motion} />
+
+        <Banner
+          tone="violet"
+          eyebrow="Messages · bientôt"
+          title="Tes commentaires deviennent des clients."
+          body="Quelqu'un écrit « je veux » sous ta vidéo : une réponse en français part tout de suite, et la personne arrive dans tes messages."
+          cta="Voir comment"
+          href="/messages"
+          side={<LazyVideo slug="doigts" className="mx-auto aspect-[9/16] w-full max-w-[240px] rounded-[28px] border border-white/15 object-cover shadow-lift" />}
+        />
+
+        {/* How it works: a real sequence, so it's numbered */}
+        <section className="flex flex-col gap-4" aria-labelledby="comment">
+          <H2 id="comment">Comment ça marche</H2>
+          <ol className="grid gap-4 md:grid-cols-3">
+            {steps.map((s, i) => (
+              <li key={s.title} className="glass light-edge flex flex-col gap-3 rounded-[24px] p-6">
+                <span className="font-mono text-[13px] text-lilas tabular">0{i + 1}</span>
+                <h3 className="font-display text-[22px] leading-tight font-bold">{s.title}</h3>
+                <p className="text-[16px] leading-[1.5] text-ink-muted">{s.body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <MediaSection s={quotidien} />
+
+        {/* All formats */}
+        <section id="formats" className="flex scroll-mt-24 flex-col gap-4" aria-labelledby="tous">
+          <div className="flex items-end justify-between">
+            <H2 id="tous">Tous les formats</H2>
+            <span className="font-mono text-[13px] text-ink-muted tabular">{formats.length} formats</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-6">
+            {formats.map((f) => <FormatCard key={f.slug} f={f} />)}
+          </div>
+        </section>
+
+        {/* Explore more: chip cloud */}
+        <section className="flex flex-col items-center gap-5 text-center" aria-labelledby="plus">
+          <H2 id="plus">Explore tous les formats</H2>
+          <div className="flex max-w-4xl flex-wrap justify-center gap-2">
+            {[...formats.map((f) => ({ k: f.slug, t: f.title, h: `/creer?format=${f.slug}` })), ...sections.flatMap((s) => s.tiles.map((t) => ({ k: `${s.id}-${t.slug}`, t: t.label, h: `#${s.id}` })))].map((c) => (
+              <Link key={c.k} href={c.h} className="glass h-9 rounded-full px-3.5 text-[13.5px] leading-9 font-semibold text-ink-muted hover:text-ink">
+                {c.t}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Closing band */}
+        <section className="relative overflow-hidden rounded-[36px] border border-glass-rim px-6 py-12 text-center md:px-12" style={{ background: "radial-gradient(60% 70% at 50% 110%, color-mix(in srgb, var(--rose) 28%, transparent) 0%, transparent 70%)" }}>
+          <GlassLoop className="mx-auto -mt-4 mb-2 w-full max-w-[260px]" />
+          <h2 className="font-display text-[32px] leading-tight font-extrabold tracking-[-0.015em] text-balance md:text-[44px]">Ta prochaine vidéo, ce soir.</h2>
+          <p className="mx-auto mt-3 max-w-[44ch] text-[17px] text-ink-muted">Choisis un format, filme 3 plans, on fait le reste.</p>
+          <div className="mt-6 flex justify-center"><ButtonLink href="/creer">Commencer</ButtonLink></div>
+        </section>
+      </div>
     </>
   );
 }

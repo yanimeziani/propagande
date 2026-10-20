@@ -8,7 +8,7 @@ import { formats } from "@/lib/formats";
 const times = ["Maintenant", "Ce soir 18 h", "Demain 12 h"];
 
 /** Créer: control panel (left) + canvas (right); on phones they stack and the action stays in thumb reach. */
-export function StudioView({ initialSlug }: { initialSlug: string }) {
+export function StudioView({ initialSlug, idea }: { initialSlug: string; idea?: string }) {
   const [slug, setSlug] = useState(initialSlug);
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [voice, setVoice] = useState(true);
@@ -23,6 +23,12 @@ export function StudioView({ initialSlug }: { initialSlug: string }) {
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 pb-40 md:flex-row md:overflow-hidden md:p-4 md:pb-4">
       {/* Control panel */}
       <aside className="glass flex w-full shrink-0 flex-col gap-6 rounded-[24px] p-5 md:w-[340px] md:overflow-y-auto">
+        {idea && (
+          <div className="flex flex-col gap-1 rounded-[14px] border border-glass-rim p-3">
+            <span className="text-[13px] font-semibold text-ink-muted">Ton idée</span>
+            <p className="text-[15px] leading-snug">{idea}</p>
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           <label htmlFor="format" className="text-[14px] font-semibold text-ink-muted">Format</label>
           <select

@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import { CreationsView } from "@/components/library/creations-view";
+import { Suspense } from "react";
+import { CreationsFromQuery } from "@/components/library/creations-from-query";
 
 export const metadata: Metadata = { title: "Mes créations" };
 
-export default async function CreationsPage({ searchParams }: { searchParams: Promise<{ outil?: string }> }) {
-  const { outil } = await searchParams;
-  const tool = outil === "propagande" || outil === "agent-double" ? outil : "tous";
-  return <CreationsView initialTool={tool} />;
+// Static page: the « ?outil= » filter is read in the browser, so the site can be exported as plain files
+export default function CreationsPage() {
+  return (
+    <Suspense>
+      <CreationsFromQuery />
+    </Suspense>
+  );
 }

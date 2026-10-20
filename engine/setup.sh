@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 [ "$(uname)" = "Darwin" ] || { echo "Propagande's local engine renders with AVFoundation: macOS only for now."; exit 1; }
 command -v swiftc >/dev/null || { echo "swiftc missing: install the Xcode Command Line Tools (xcode-select --install)."; exit 1; }
 mkdir -p bin
-for t in extract_audio render_clip join_clips; do
+for t in extract_audio render_clip join_clips reference; do
   swiftc -O "swift/$t.swift" -o "bin/${t//_/-}" 2>/dev/null && echo "built bin/${t//_/-}"
 done
 W="$HOME/.local/bin/whisper-cli"; M="$HOME/.local/share/whisper-models/ggml-large-v3-turbo-q5_0.bin"

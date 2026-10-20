@@ -1,0 +1,8 @@
+{
+  "name": "podcast-calme",
+  "label": "Calm podcast: sentence case on a dark band, 5 words, slow framing, gentle push-ins",
+  "captions": { "case": "sentence", "max_words": 5, "max_chars": 30, "font": "AvenirNext-DemiBold", "size": 0.055, "y": 0.2,
+                "fill": "#FFFFFF", "active": "#FFDFBE", "stroke": null, "stroke_width": 0, "box": "#000000B3", "pop": 0.0 },
+  "pacing": { "shot_seconds": 4.5, "alt_scale": 1.05, "punch_scale": 1.1, "min_gap": 2.0, "keyword_gap": 6.0, "ramp": 0.35 },
+  "music": { "gain": 0.1, "fade": 0.8 }
+}

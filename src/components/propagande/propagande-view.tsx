@@ -5,23 +5,35 @@ import { ToolHeader } from "@/components/site/tool-header";
 import { Button } from "@/components/ui/button";
 import { analyzeFile, fmtTime, type Moment } from "@/lib/clips/analyze";
 import { exportClip } from "@/lib/clips/export";
+import { takeHandoff, type Handoff } from "@/lib/handoff";
 
 type Clip = Moment & { focus: number; progress?: number; out?: { url: string; ext: string } ; error?: string };
 type Status = { kind: "idle" } | { kind: "analyse" } | { kind: "pret" } | { kind: "erreur"; msg: string };
 
 /** Propagande: drop a long video, get its strongest moments as 9:16 clips, export them. Runs on the device. */
 export function PropagandeView() {
-  const [file, setFile] = useState<File | null>(null);
-  const [url, setUrl] = useState<string>("");
-  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [handoff] = useState<Handoff | null>(() => (typeof window === "undefined" ? null : takeHandoff("propagande")));
+  const [file, setFile] = useState<File | null>(handoff?.file ?? null);
+  const [url, setUrl] = useState<string>(() => (handoff ? URL.createObjectURL(handoff.file) : ""));
+  const [status, setStatus] = useState<Status>(handoff ? { kind: "analyse" } : { kind: "idle" });
   const [clips, setClips] = useState<Clip[]>([]);
   const [env, setEnv] = useState<Float32Array | null>(null);
   const [duration, setDuration] = useState(0);
-  const [count, setCount] = useState(8);
-  const [length, setLength] = useState(30);
+  const [count, setCount] = useState(handoff?.count ?? 8);
+  const [length, setLength] = useState(handoff?.length ?? 30);
   const main = useRef<HTMLVideoElement>(null);
 
   useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+
+  // A file handed over from the home composer: analyse it right away
+  useEffect(() => {
+    if (!handoff) return;
+    let live = true;
+    analyzeFile(handoff.file, { count: handoff.count ?? 8, length: handoff.length ?? 30 })
+      .then((a) => { if (!live) return; setEnv(a.env); setDuration(a.duration); setClips(a.moments.map((m) => ({ ...m, focus: 0.5 }))); setStatus({ kind: "pret" }); })
+      .catch(() => live && setStatus({ kind: "erreur", msg: "On n'a pas pu lire le son de cette vidéo. Essaie un MP4 ou un MOV." }));
+    return () => { live = false; };
+  }, [handoff]);
 
   async function run(f: File, n = count, len = length) {
     setStatus({ kind: "analyse" });

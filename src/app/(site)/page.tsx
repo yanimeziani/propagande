@@ -2,6 +2,7 @@ import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { FeelsIllegal } from "@/components/brand/feels-illegal";
 import { GlassLoop } from "@/components/brand/glass-loop";
 import { ToolName } from "@/components/brand/tool-name";
+import { Composer } from "@/components/home/composer";
 import { MediaSection } from "@/components/home/media-section";
 import { LazyVideo } from "@/components/media/lazy-video";
 import { HeroWall } from "@/components/site/hero-wall";
@@ -34,9 +35,9 @@ export default function HomePage() {
   return (
     <>
       {/* Hero: the tilted wall, the glass mark, the stamp, one line */}
-      <section className="relative isolate flex min-h-[84svh] items-center justify-center overflow-hidden px-4 py-24">
+      <section className="relative isolate flex min-h-[88svh] items-center justify-center overflow-hidden px-4 py-24">
         <HeroWall columns={6} />
-        <div className="relative z-10 flex max-w-3xl flex-col items-center gap-6 text-center">
+        <div className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-6 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/m-glass-logo.webp" alt="" className="h-20 w-auto motion-reduce:hidden" />
           <FeelsIllegal />
@@ -47,12 +48,7 @@ export default function HomePage() {
           <p className="max-w-[48ch] text-[18px] leading-[1.5] text-ink-muted">
             Propagande transforme une vidéo longue en clips qui tournent. Agent double change le personnage de ta scène.
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <ButtonLink href="/propagande">
-              Essayer Propagande <ArrowRight size={18} weight="bold" aria-hidden />
-            </ButtonLink>
-            <ButtonLink href="/agent-double" variant="secondary">Voir Agent double</ButtonLink>
-          </div>
+          <Composer />
         </div>
       </section>
 
@@ -88,7 +84,7 @@ export default function HomePage() {
           </section>
         ))}
 
-        <MediaSection s={{ ...mode, title: "Fait avec MadeLucid", sub: "Des personnages IA et des formats qui accrochent, faits par nous." }} />
+        <MediaSection s={{ ...mode, id: "exemples", title: "Fait avec MadeLucid", sub: "Des personnages IA et des formats qui accrochent, faits par nous." }} />
         <MediaSection s={cinema} />
 
         {/* Closing band */}

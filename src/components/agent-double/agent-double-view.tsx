@@ -4,6 +4,7 @@ import { Check, Crosshair, ImageSquare, UploadSimple, VideoCamera } from "@phosp
 import { ToolHeader } from "@/components/site/tool-header";
 import { Button } from "@/components/ui/button";
 import { fmtTime } from "@/lib/clips/analyze";
+import { takeHandoff } from "@/lib/handoff";
 
 type Target = { x: number; y: number; t: number };
 type Who = "ia" | "reelle";
@@ -18,7 +19,10 @@ const STEPS = [
 
 /** Agent double: your scene, a new character. Inputs work today; generation waits for the GPU engine. */
 export function AgentDoubleView() {
-  const [video, setVideo] = useState<{ url: string; name: string } | null>(null);
+  const [video, setVideo] = useState<{ url: string; name: string } | null>(() => {
+    const h = typeof window === "undefined" ? null : takeHandoff("agent-double");
+    return h ? { url: URL.createObjectURL(h.file), name: h.file.name } : null;
+  });
   const [image, setImage] = useState<{ url: string; name: string } | null>(null);
   const [target, setTarget] = useState<Target | null>(null);
   const [who, setWho] = useState<Who>("ia");

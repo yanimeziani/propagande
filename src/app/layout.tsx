@@ -9,11 +9,11 @@ const stencil = Big_Shoulders_Stencil({ variable: "--font-stencil-src", subsets:
 const typewriter = Special_Elite({ variable: "--font-typewriter-src", subsets: ["latin"], weight: "400", fallback: ["Courier New", "monospace"] });
 
 export const metadata: Metadata = {
-  title: { default: "MadeLucid · Feels illegal.", template: "%s · MadeLucid" },
-  description: "Propagande transforme une vidéo longue en clips qui tournent. Agent double change le personnage de ta scène. Feels illegal.",
+  title: { default: "MadeLucid · Propagande et Agent double", template: "%s · MadeLucid" },
+  description: "Propagande transforme une vidéo longue en clips qui tournent. Agent double change le personnage de ta scène.",
 };
 
-export const viewport: Viewport = { themeColor: "#07060b", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#0f0f0f", colorScheme: "dark" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

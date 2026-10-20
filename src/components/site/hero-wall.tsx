@@ -44,7 +44,7 @@ export function HeroWall({ columns = 6 }: { columns?: number }) {
         ))}
       </div>
       {/* Vignette so the headline reads: dark centre band, fades at every edge */}
-      <div className="absolute inset-0" style={{ background: "radial-gradient(60% 55% at 50% 50%, rgba(7,6,11,0.92) 0%, rgba(7,6,11,0.55) 55%, rgba(7,6,11,0.15) 100%)" }} />
+      <div className="absolute inset-0" style={{ background: "radial-gradient(60% 55% at 50% 50%, color-mix(in srgb, var(--surface-100) 92%, transparent) 0%, color-mix(in srgb, var(--surface-100) 60%, transparent) 55%, color-mix(in srgb, var(--surface-100) 15%, transparent) 100%)" }} />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-surface-100 to-transparent" />
       <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-surface-100 to-transparent" />
     </div>

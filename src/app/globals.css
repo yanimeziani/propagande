@@ -3,44 +3,29 @@
 /* MadeLucid tokens, mirrored from the design system (https://claude.ai/artifact/FC6gQKfP94ryh2RT7ouXn2).
    Nuit (dark) is the default; Jour applies only when data-theme="light" is set. */
 :root {
-  --surface-100: #07060b;
-  --surface-200: #13111b;
-  --glass: rgba(255, 255, 255, 0.06);
-  --glass-rim: rgba(255, 255, 255, 0.14);
-  --line: #2a2533;
-  --ink: #f4f1ff;
-  --ink-muted: #a9a2b8;
-  --corail: #ff5a3c;
-  --on-corail: #120f1c;
-  --violet: #6a5cff;
-  --on-violet: #ffffff;
-  --rose: #e0577e;
-  --lilas: #cfcaf9;
-  --rec: #ff3d5a;
-  --ok: #5ee6b0;
-  --focus: #cfcaf9;
+  /* Neon Orange Light scheme (schemecolor.com): Atomic Black, Galaxy Black, Chilli Red, Flesh Ochre, Dark Orange, Very Pale Orange. */
+  --surface-100: #0f0f0f;
+  --surface-200: #181818;
+  --glass: rgba(255, 223, 190, 0.05);
+  --glass-rim: rgba(255, 223, 190, 0.12);
+  --line: #2a2a2a;
+  --ink: #fff7ef;
+  --ink-muted: #b0a79d;
+  --corail: #fe8b02;
+  --on-corail: #0f0f0f;
+  --corail-ink: #fe8b02;
+  --violet: #ffdfbe;
+  --on-violet: #0f0f0f;
+  --rose: #ff581b;
+  --azur: #ffdfbe;
+  --menthe: #ffdfbe;
+  --lilas: #ffdfbe;
+  --rec: #ff3403;
+  --ok: #ffdfbe;
+  --on-ok: #0f0f0f;
+  --focus: #ffdfbe;
   --shadow-lift: 0 12px 32px rgba(0, 0, 0, 0.55);
   color-scheme: dark;
-}
-
-:root[data-theme="light"] {
-  --surface-100: #fbfaff;
-  --surface-200: #ffffff;
-  --glass: rgba(255, 255, 255, 0.72);
-  --glass-rim: rgba(18, 15, 28, 0.1);
-  --line: #e4dfea;
-  --ink: #120f1c;
-  --ink-muted: #5a5468;
-  --corail: #d63a1c;
-  --on-corail: #ffffff;
-  --violet: #4a3df0;
-  --rose: #c2335f;
-  --lilas: #4a3df0;
-  --rec: #d4183a;
-  --ok: #0a7a55;
-  --focus: #4a3df0;
-  --shadow-lift: 0 10px 28px rgba(18, 15, 28, 0.12);
-  color-scheme: light;
 }
 
 @theme inline {
@@ -53,12 +38,16 @@
   --color-ink-muted: var(--ink-muted);
   --color-corail: var(--corail);
   --color-on-corail: var(--on-corail);
+  --color-corail-ink: var(--corail-ink);
   --color-violet: var(--violet);
   --color-on-violet: var(--on-violet);
   --color-rose: var(--rose);
+  --color-azur: var(--azur);
+  --color-menthe: var(--menthe);
   --color-lilas: var(--lilas);
   --color-rec: var(--rec);
   --color-ok: var(--ok);
+  --color-on-ok: var(--on-ok);
   --font-display: var(--font-geist);
   --font-sans: var(--font-geist);
   --font-propagande: var(--font-stencil-src);
@@ -86,6 +75,28 @@ body {
   outline-offset: 2px;
 }
 
+/* Iridescence, kept warm and slow: amber → flame → pale → amber, like heat on metal. */
+:root {
+  --iri: linear-gradient(110deg in oklch, #fe8b02, #ff581b, #ffdfbe, #fe8b02);
+}
+.iri-text {
+  background-image: var(--iri);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: iri-drift 30s linear infinite;
+}
+.iri-fill {
+  background-image: var(--iri);
+  background-size: 300% 100%;
+  animation: iri-drift 30s linear infinite;
+}
+@keyframes iri-drift {
+  from { background-position: 0% 50%; }
+  to { background-position: 300% 50%; }
+}
+
 /* A glass panel: the fill, a blur and a 1px rim. */
 .glass {
   background: var(--glass);
@@ -105,7 +116,7 @@ body {
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--corail), var(--rose), var(--violet));
+  background: var(--iri);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -146,4 +157,7 @@ body {
 .wall-col-down { animation: wall-down var(--wall-dur, 40s) linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .wall-col { animation: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iri-text, .iri-fill { animation: none !important; }
 }

@@ -1,6 +1,5 @@
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { FeelsIllegal } from "@/components/brand/feels-illegal";
-import { GlassLoop } from "@/components/brand/glass-loop";
 import { ToolName } from "@/components/brand/tool-name";
 import { Composer } from "@/components/home/composer";
 import { MediaSection } from "@/components/home/media-section";
@@ -38,12 +37,10 @@ export default function HomePage() {
       <section className="relative isolate flex min-h-[88svh] items-center justify-center overflow-hidden px-4 py-24">
         <HeroWall columns={6} />
         <div className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-6 text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/m-glass-logo.webp" alt="" className="h-20 w-auto motion-reduce:hidden" />
           <FeelsIllegal />
           <h1 className="font-display text-[46px] leading-[0.98] font-extrabold tracking-[-0.025em] text-balance md:text-[80px]">
             Deux outils qui font{" "}
-            <span className="bg-gradient-to-r from-corail via-rose to-violet bg-clip-text text-transparent">tourner tes vidéos.</span>
+            <span className="iri-text">tourner tes vidéos.</span>
           </h1>
           <p className="max-w-[48ch] text-[18px] leading-[1.5] text-ink-muted">
             Propagande transforme une vidéo longue en clips qui tournent. Agent double change le personnage de ta scène.
@@ -89,7 +86,6 @@ export default function HomePage() {
 
         {/* Closing band */}
         <section className="relative overflow-hidden rounded-[36px] border border-glass-rim px-6 py-12 text-center md:px-12" style={{ background: "radial-gradient(60% 70% at 50% 110%, color-mix(in srgb, var(--rose) 28%, transparent) 0%, transparent 70%)" }}>
-          <GlassLoop className="mx-auto -mt-4 mb-2 w-full max-w-[260px]" />
           <h2 className="font-display text-[32px] leading-tight font-extrabold tracking-[-0.02em] text-balance md:text-[44px]">Ta prochaine vidéo commence ici.</h2>
           <p className="mx-auto mt-3 max-w-[44ch] text-[17px] text-ink-muted">Dépose une vidéo longue. Propagande en tire les clips.</p>
           <div className="mt-6 flex justify-center"><ButtonLink href="/propagande">Essayer Propagande</ButtonLink></div>

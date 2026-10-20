@@ -65,7 +65,7 @@ export function AgentDoubleView() {
                   className="absolute inset-x-0 top-0 bottom-12 cursor-crosshair" />
                 {target && (
                   <span className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${target.x * 100}%`, top: `${target.y * 100}%` }}>
-                    <span className="block size-10 rounded-full border-[3px] border-corail bg-corail/25 shadow-[0_0_0_6px_rgba(255,90,60,0.25)]" />
+                    <span className="block size-10 rounded-full border-[3px] border-corail bg-corail/25 shadow-[0_0_0_6px_color-mix(in_srgb,var(--corail)_25%,transparent)]" />
                   </span>
                 )}
               </div>
@@ -156,7 +156,7 @@ export function AgentDoubleView() {
 
 function Step({ n, done }: { n: number; done: boolean }) {
   return (
-    <span className={`flex size-6 items-center justify-center rounded-full text-[12px] font-bold ${done ? "bg-ok text-on-corail" : "border border-glass-rim text-ink-muted"}`}>
+    <span className={`flex size-6 items-center justify-center rounded-full text-[12px] font-bold ${done ? "bg-ok text-on-ok" : "border border-glass-rim text-ink-muted"}`}>
       {done ? <Check size={14} weight="bold" aria-hidden /> : n}
     </span>
   );

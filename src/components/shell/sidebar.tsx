@@ -86,7 +86,7 @@ export function Sidebar() {
             <span className="text-[13px] font-semibold">Crédits</span>
             <span className="font-mono text-[13px] tabular">0</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full w-0 bg-gradient-to-r from-corail via-rose to-violet" /></div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full w-0 iri-fill" /></div>
           <Link href="/tarifs" className="text-[13px] font-semibold text-lilas hover:underline">Voir les forfaits</Link>
         </div>
       ) : (

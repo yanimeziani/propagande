@@ -17,7 +17,7 @@ export function Footer() {
         <div className="flex flex-col items-start gap-5">
           <Logo />
           <p className="flex flex-col gap-1 text-[40px] leading-[0.95] md:text-[52px]">
-            <ToolName tool="propagande" className="text-corail" />
+            <ToolName tool="propagande" className="text-corail-ink" />
             <ToolName tool="agent-double" className="text-lilas" />
           </p>
           <FeelsIllegal />

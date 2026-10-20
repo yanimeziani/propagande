@@ -56,7 +56,7 @@ Still to do:
 - [ ] Section 1, decisions 1 to 8
 - [ ] **By Oct 23 (Yani):** test on a Windows laptop without a recent GPU, an Android phone, an iPhone and Firefox. A failure on iPhone that isn't caught by the device check stops the launch (Wickman).
 - [ ] **By Oct 23 (Yani):** film the first long video and the launch demo clip (Gary V)
-- [ ] **Before Oct 25 (Yani):** after deploy, run the scorecard count once on the real web server and check the access log survives a restart (Wickman)
+- [x] Deployed to madelucid.com on 2026-10-20 (backup `html-pre-propagande-20261020T160041.tgz`); smoke test all 200; an `open` event from a real visit reached the log (Wickman)
 - [ ] Deploy, with a backup first and Yani's OK
 - [ ] **By Nov 7:** build the Pro queue and saved styles, and the checkout
 
@@ -101,10 +101,11 @@ Log each tester: device, browser, time to the first clip, finished yes or no, ca
 | Open issues | GitHub plus the inbox |
 | Founder hours on Propagande | Yani's log, cap 20 |
 
-On the server, from the web server's access log for the week:
+On the server (the site's nginx logs go to `docker logs madelucid-agency-web`; they survive restarts, not a recreated container). Smoke-test `curl` hits are skipped:
 
 ```bash
-for e in open device-gpu device-cpu voice-yes voice-no voice-fail clips-ready export export-fail first-clip return-w2 from-endcard error; do printf '%-12s %s\n' "$e" "$(grep -c "GET /e/$e.txt" access.log)"; done
+L=$(docker logs --since 168h madelucid-agency-web 2>/dev/null | grep -v curl)
+for e in open device-gpu device-cpu voice-yes voice-no voice-fail clips-ready export export-fail first-clip return-w2 from-endcard error; do printf '%-12s %s\n' "$e" "$(grep -c "GET /e/$e.txt" <<<"$L")"; done
 ```
 
 The counts carry no identifier: only the path is used. They don't record on localhost.

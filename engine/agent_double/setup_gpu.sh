@@ -37,4 +37,4 @@ for f in Wan2.2-Animate-14B/process_checkpoint/det Wan2.2-Animate-14B/process_ch
   [ -e "$f" ] || { echo "Missing $f after download: check the model card."; exit 1; }
 done
 echo
-echo "Ready. Next: python3 server.py --root $ROOT --token <a long random secret>"
+echo "Ready. Next: python3 server.py --root $ROOT --codes $ROOT/codes.txt   (one access code per line)"

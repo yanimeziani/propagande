@@ -35,7 +35,7 @@ export function AgentDoubleView() {
   const [consent, setConsent] = useState(false);
   const [engine] = useState<string | null>(() => (typeof window === "undefined" ? null : engineUrl()));
   const [code, setCode] = useState(() => { try { return typeof window === "undefined" ? "" : localStorage.getItem("ml-double-code") ?? ""; } catch { return ""; } });
-  const [job, setJob] = useState<{ id: string; status: JobStatus; result?: string; error?: string } | null>(null);
+  const [job, setJob] = useState<{ id: string; status: JobStatus; draft: boolean; result?: string; error?: string } | null>(null);
   const [tooLong, setTooLong] = useState(false);
   const v = useRef<HTMLVideoElement>(null);
   const overlay = useRef<HTMLCanvasElement>(null);
@@ -98,16 +98,17 @@ export function AgentDoubleView() {
   const ready = !!video && !!image && !!track && ownVideo && (who === "ia" || consent) && !tooLong;
   const busyJob = !!job && !["done", "failed"].includes(job.status.state);
 
-  async function generate() {
+  /** A 480p draft first; the 720p final only once the visitor has seen the draft and said OK. */
+  async function generate(draft: boolean) {
     if (!ready || !engine || !video || !image || !target || !track || !code.trim()) return;
     try { localStorage.setItem("ml-double-code", code.trim()); } catch { /* storage blocked */ }
-    setJob({ id: "", status: { state: "queued" } });
+    setJob({ id: "", draft, status: { state: "queued" } });
     try {
       const id = await submitJob(engine, code.trim(), video.url, image.url, {
-        draft: true, tap: target, max_seconds: 10, track_coverage: Math.round(coverage(track) * 100) / 100,
+        draft, tap: target, max_seconds: 10, track_coverage: Math.round(coverage(track) * 100) / 100,
         consent: { own_video: ownVideo, character: who === "ia" ? "ai" : "real", real_person_consent: who === "reelle" ? consent : undefined, at: new Date().toISOString() },
       });
-      setJob({ id, status: { state: "queued" } });
+      setJob({ id, draft, status: { state: "queued" } });
       for (;;) {
         await new Promise((r) => setTimeout(r, 3000));
         const st = await jobStatus(engine, code.trim(), id);
@@ -117,9 +118,9 @@ export function AgentDoubleView() {
       }
       const blob = await jobResult(engine, code.trim(), id);
       setJob((j) => (j ? { ...j, result: URL.createObjectURL(blob) } : j));
-      await addCreation({ tool: "agent-double", title: `Brouillon · ${video.name}`, source: video.name, start: 0, end: v.current?.duration ?? 0, ext: "mp4" }, blob).catch(() => {});
+      await addCreation({ tool: "agent-double", title: `${draft ? "Brouillon" : "Final"} · ${video.name}`, source: video.name, start: 0, end: v.current?.duration ?? 0, ext: "mp4" }, blob).catch(() => {});
     } catch (e) {
-      setJob((j) => ({ id: j?.id ?? "", status: { state: "failed" }, error: e instanceof Error ? e.message : "La génération a échoué." }));
+      setJob((j) => ({ id: j?.id ?? "", draft, status: { state: "failed" }, error: e instanceof Error ? e.message : "La génération a échoué." }));
     }
   }
   const missing = [!video && "la scène", !target && "la personne à remplacer", !image && "le nouveau personnage", !ownVideo && "tes droits sur la vidéo", who === "reelle" && !consent && "le consentement"].filter(Boolean) as string[];
@@ -250,7 +251,7 @@ export function AgentDoubleView() {
                 className="glass h-11 w-48 rounded-full px-4 font-mono text-[14px] outline-none focus:ring-2 focus:ring-[var(--focus)]" />
             </label>
           )}
-          <Button onClick={generate} disabled={!engine || !ready || !code.trim() || busyJob} className="disabled:cursor-not-allowed disabled:opacity-60">
+          <Button onClick={() => generate(true)} disabled={!engine || !ready || !code.trim() || busyJob} className="disabled:cursor-not-allowed disabled:opacity-60">
             {busyJob ? "Génération…" : engine ? "Générer un brouillon (480p)" : "Générer un brouillon (bientôt)"}
           </Button>
           <p className="text-[14px] text-ink-muted">
@@ -266,7 +267,10 @@ export function AgentDoubleView() {
             {job.result && (
               <>
                 <video src={job.result} controls playsInline className="max-h-[60vh] w-full rounded-[14px] bg-black object-contain" />
-                <a href={job.result} download={`agent-double-${job.id}.mp4`} className="inline-flex h-11 w-fit items-center rounded-full bg-ok px-5 text-[15px] font-semibold text-on-ok">Télécharger le brouillon</a>
+                <a href={job.result} download={`agent-double-${job.id}.mp4`} className="inline-flex h-11 w-fit items-center rounded-full bg-ok px-5 text-[15px] font-semibold text-on-ok">{job.draft ? "Télécharger le brouillon" : "Télécharger la version finale"}</a>
+                {job.draft && !job.status.dry_run && (
+                  <Button onClick={() => generate(false)} disabled={!ready} className="w-fit disabled:opacity-60">C&apos;est bon : version finale (720p)</Button>
+                )}
                 {job.status.dry_run && <p className="text-[13px] text-ink-muted">Test du serveur : le résultat est ta scène d&apos;origine, sans remplacement.</p>}
               </>
             )}
